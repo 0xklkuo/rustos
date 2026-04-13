@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "kernel",
+    "xtask",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
