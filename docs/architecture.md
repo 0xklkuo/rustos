@@ -105,11 +105,11 @@ Repository and workspace foundation:
 - CI baseline
 
 ### Stage 1
-Minimal bootable kernel:
-- UEFI entry path
-- basic output
-- panic handling
-- emulator run workflow
+Minimal bootable UEFI application:
+- UEFI application entry path
+- basic console output
+- panic handling through UEFI helpers
+- direct QEMU boot workflow with a small EFI disk image
 
 ### Stage 2
 Kernel structure for growth:
@@ -142,12 +142,35 @@ These boundaries are intended to keep the code understandable as the project gro
 
 The project will use a UEFI-first boot path for the MVP.
 
+In the first bootable milestone, `rustos` is implemented as a small UEFI application rather than a fully separated bootloader-plus-kernel design.
+
 Reasons:
+- it is the smallest practical path to a bootable artifact
+- it keeps the entry flow easy to read and debug
+- it allows early output and panic handling with minimal setup
+- it avoids introducing a second binary and handoff boundary too early
+
+Reasons for choosing UEFI first:
 - modern and cleaner than legacy BIOS-first approaches
 - easier to explain as a current baseline
 - aligns with the chosen target and educational goals
 
-The exact boot implementation should remain as small as possible in early milestones.
+For local execution, the project should prefer a direct QEMU workflow over a higher-level runner abstraction.
+
+Reasons:
+- it keeps the boot path explicit and easier to debug
+- it avoids hidden assumptions about firmware naming and host packaging
+- it reduces dependency on extra tooling that is not essential to the project
+- it is easier to document and maintain across environments
+- it better matches the educational goal of showing how the system is actually booted
+
+The direct run flow should stay minimal:
+- build the UEFI binary
+- place it at the default removable-media boot path
+- create a small EFI disk image
+- launch QEMU with explicit firmware and disk arguments
+
+The exact boot implementation should remain as small as possible in early milestones. A more explicit loader and kernel split can be introduced later if the project outgrows the single-image approach.
 
 ## Tooling Strategy
 
@@ -155,13 +178,13 @@ The project should use a minimal modern Rust workflow.
 
 Planned tooling:
 - Rust workspace
-- pinned toolchain configuration
+- stable Rust toolchain with the `x86_64-unknown-uefi` target
 - `cargo fmt`
 - `cargo clippy`
 - `cargo check`
 - `cargo xtask` for project-specific workflows
 - GitHub Actions for CI
-- QEMU for local execution
+- direct QEMU-based local execution through a small EFI disk image workflow
 
 Tooling should support the project without becoming a project of its own.
 

@@ -6,4 +6,20 @@ members = [
 resolver = "2"
 
 [workspace.package]
-edition = "2021"
+edition = "2024"
+version = "0.1.0"
+license = "MIT"
+publish = false
+authors = ["KL KUO <kl@klkuo@guru>"]
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+pedantic = "warn"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

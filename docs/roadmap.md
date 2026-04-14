@@ -23,6 +23,7 @@ The MVP is a small, bootable kernel foundation that:
 - has a clean monorepo structure
 - includes concise contributor and architecture documentation
 - includes basic CI for formatting and build validation
+- uses a direct QEMU workflow instead of a runner-specific wrapper
 
 ## Non-Goals for MVP
 
@@ -77,16 +78,28 @@ Acceptance criteria:
 
 ### Milestone 1 — Minimal Bootable UEFI Kernel
 
-Goal: produce the smallest bootable kernel artifact.
+Status: in progress
+
+Goal: produce the smallest bootable kernel artifact with the simplest practical local workflow.
 
 Deliverables:
 
 - `no_std` kernel entry
 - panic handler
 - basic output path
-- QEMU run workflow
+- direct QEMU run workflow
 - `xtask run`
 - concise local setup instructions
+- minimal EFI disk image creation
+
+Current implementation status:
+
+- a minimal UEFI application entry path has been introduced
+- deterministic boot output is implemented
+- `xtask` commands now cover `check`, `fmt`, `lint`, and `run`
+- CI now includes a UEFI target build step
+- the run workflow is being simplified to use direct QEMU invocation
+- runner-specific firmware assumptions are being removed from the local workflow
 
 Acceptance criteria:
 
@@ -94,6 +107,7 @@ Acceptance criteria:
 - QEMU launches the image successfully
 - the kernel prints a deterministic boot message
 - panic behavior is defined and understandable
+- the local run path is explicit and easy to debug
 
 ### Milestone 2 — Developer Workflow and CI
 
@@ -204,6 +218,7 @@ The project is on track if:
 - each milestone leaves the codebase cleaner, not more confusing
 - documentation stays concise and accurate
 - the project remains small enough to study comfortably
+- local boot workflows avoid unnecessary wrapper tools and hidden assumptions
 
 ## Review Policy
 

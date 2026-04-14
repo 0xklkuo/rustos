@@ -56,7 +56,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone 0 — workspace and project foundation
+- Milestone 1 — minimal bootable UEFI kernel
 
 ## Roadmap
 
@@ -67,14 +67,110 @@ See:
 
 ## Local Development
 
-Planned local workflow will center around:
+Milestone 1 introduces the first bootable UEFI application and the first real `xtask` workflow.
 
-- Rust toolchain
-- QEMU
-- UEFI-based boot flow
-- `cargo xtask` commands for common tasks
+### Requirements
 
-Detailed setup instructions will be added as the bootable kernel milestone is implemented.
+Install:
+
+- stable Rust
+- the `x86_64-unknown-uefi` Rust target
+- QEMU with `qemu-system-x86_64`
+
+The Rust toolchain and target are pinned in `rust-toolchain.toml`.
+
+#### Suggested macOS Setup
+
+If you are developing on macOS, install the emulator tools you need first.
+
+For example, with Homebrew:
+
+- `brew install qemu`
+
+You do not need `uefi-run`.
+
+### Common Commands
+
+Check the workspace:
+
+- `cargo run -p xtask -- check`
+
+Check formatting:
+
+- `cargo run -p xtask -- fmt`
+
+Run lints:
+
+- `cargo run -p xtask -- lint`
+
+Build and run the UEFI application:
+
+- `cargo run -p xtask -- run`
+
+### What `xtask run` Does
+
+The `run` command:
+
+1. builds the `kernel` crate for `x86_64-unknown-uefi`
+2. creates a small EFI boot directory
+3. copies the generated binary to `EFI/BOOT/BOOTX64.EFI`
+4. writes a `startup.nsh` script that launches `EFI\BOOT\BOOTX64.EFI`
+5. creates a FAT disk image with the host image tool
+6. launches QEMU directly with explicit UEFI firmware files
+7. forwards extra arguments to QEMU
+
+Example with extra QEMU arguments:
+
+- `cargo run -p xtask -- run -m 512M`
+
+### Bounded Run Mode
+
+For local interactive use, `cargo run -p xtask -- run` should keep QEMU attached so you can inspect the boot flow manually.
+
+For editor agents, CI, and sandboxed environments, the run workflow should also support a bounded mode that exits automatically. A practical design is:
+
+- a timeout-based mode, such as `cargo run -p xtask -- run --timeout-secs 5`
+- an output-based mode that exits after a known boot message is observed
+- a non-interactive test mode that fails clearly if the expected boot output is not produced
+
+This keeps the default developer experience simple while making automated validation faster and less likely to hang.
+
+### Firmware Notes
+
+The direct QEMU workflow is intentionally explicit.
+
+By default, the project looks for common firmware files such as:
+
+- `edk2-x86_64-code.fd`
+- `OVMF_CODE.fd`
+- `OVMF_VARS.fd`
+
+If your local firmware files are in a different location, set:
+
+- `RUSTOS_UEFI_CODE`
+- `RUSTOS_UEFI_VARS`
+
+### Current Boot Behavior
+
+The current Milestone 1 boot path is intentionally small.
+
+It:
+
+- enters through a UEFI entry point
+- initializes UEFI helper support
+- prints deterministic boot messages
+- exits successfully
+
+This is a bootable foundation, not yet a full kernel runtime.
+
+### Notes
+
+- Local execution depends on QEMU, UEFI firmware files, and the host image tool being installed correctly.
+- CI validates that the UEFI target builds, but it does not guarantee your local emulator setup.
+- The direct QEMU workflow is preferred because it is simpler to understand and easier to debug than a wrapper-based runner.
+- The boot image now includes a `startup.nsh` script so the UEFI shell can launch `BOOTX64.EFI` automatically.
+- A bounded run mode is recommended for automated environments so test runs do not hang indefinitely.
+- More detailed boot and debugging guidance can be added once the run path is stable across environments.
 
 ## Contributing
 

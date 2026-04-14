@@ -1,15 +1,14 @@
 #![no_std]
 
-//! Minimal placeholder kernel crate for `rustos`.
-//!
-//! This crate intentionally stays small during Milestone 0.
-//! Boot logic, platform initialization, and runtime setup will be
-//! introduced in later milestones.
+//! Shared constants and small helpers for the `rustos` kernel crate.
 
-/// Returns the current kernel crate name.
-///
-/// This is a tiny placeholder API so the crate has at least one
-/// documented public item during the initial scaffold phase.
+/// Deterministic boot message printed during early startup.
+pub const BOOT_MESSAGE: &str = "rustos: boot start";
+
+/// Deterministic greeting printed after basic UEFI initialization.
+pub const HELLO_MESSAGE: &str = "rustos: hello from UEFI";
+
+/// Returns the project name used by the kernel.
 #[must_use]
 pub const fn kernel_name() -> &'static str {
     "rustos"
