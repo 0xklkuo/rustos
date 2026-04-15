@@ -117,6 +117,7 @@ Kernel structure for growth:
 - console and logging support
 - boot and panic support
 - placeholders for memory and interrupts
+- a minimal module layout for `arch`, `boot`, `console`, `panic`, and `memory`
 
 ### Stage 3
 Core runtime groundwork:
@@ -130,13 +131,15 @@ Core runtime groundwork:
 The kernel should remain small and modular.
 
 Expected early module boundaries:
-- `arch` — architecture-specific code
-- `boot` — boot and entry-related logic
-- `console` — early output and logging
-- `panic` — panic reporting and halt behavior
+- `arch` — architecture-specific code and target-specific setup
+- `boot` — boot entry flow and early initialization order
+- `console` — early output and logging helpers
+- `panic` — panic reporting and panic-related support
 - `memory` — memory initialization and allocation groundwork
 
 These boundaries are intended to keep the code understandable as the project grows.
+
+For Milestone 3, these modules should remain intentionally small. The goal is to make responsibilities obvious without introducing deep abstraction, generic frameworks, or speculative subsystem design.
 
 ## Boot Strategy
 
@@ -171,6 +174,8 @@ The direct run flow should stay minimal:
 - launch QEMU with explicit firmware and disk arguments
 
 The exact boot implementation should remain as small as possible in early milestones. A more explicit loader and kernel split can be introduced later if the project outgrows the single-image approach.
+
+As the kernel structure is introduced, boot behavior should stay unchanged while code is moved behind clearer module boundaries. Structural refactors should preserve the current boot path and deterministic output.
 
 ## Tooling Strategy
 

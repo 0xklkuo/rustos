@@ -12,6 +12,9 @@ bench = false
 
 [lib]
 path = "src/lib.rs"
+test = false
+bench = false
+doctest = false
 
 [dependencies]
 uefi = { version = "0.37.0", features = ["logger", "panic_handler"] }

@@ -1,17 +1,9 @@
 #![no_main]
 #![no_std]
 
-use uefi::prelude::*;
-use uefi::println;
+use kernel::boot;
 
-#[entry]
-fn efi_main() -> Status {
-    if let Err(error) = uefi::helpers::init() {
-        return error.status();
-    }
-
-    println!("rustos: boot start");
-    println!("rustos: hello from UEFI");
-
-    Status::SUCCESS
+#[uefi::entry]
+fn efi_main() -> uefi::Status {
+    boot::run()
 }

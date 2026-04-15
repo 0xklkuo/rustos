@@ -148,6 +148,12 @@ Deliverables:
 - explicit unsafe boundaries
 - architecture-specific code isolated from shared logic
 
+Current implementation status:
+
+- the kernel still uses a single-file entry path and is ready for a structural refactor
+- the next Milestone 3 step is to introduce `arch`, `boot`, `console`, `panic`, and `memory` modules without changing boot behavior
+- the existing `xtask` workflow and bounded QEMU test provide a safe validation path for this refactor
+
 Acceptance criteria:
 
 - module responsibilities are obvious

@@ -1,6 +1,16 @@
 #![no_std]
 
-//! Shared constants and small helpers for the `rustos` kernel crate.
+//! Shared kernel modules and small constants for `rustos`.
+//!
+//! This crate keeps the early kernel structure explicit and minimal.
+//! The current module layout is intentionally small so future milestones
+//! can grow without forcing a large refactor.
+
+pub mod arch;
+pub mod boot;
+pub mod console;
+pub mod memory;
+pub mod panic;
 
 /// Deterministic boot message printed during early startup.
 pub const BOOT_MESSAGE: &str = "rustos: boot start";
