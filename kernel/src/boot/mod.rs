@@ -1,8 +1,8 @@
 //! Boot entry flow for `rustos`.
 //!
 //! This module keeps the early UEFI boot path small and explicit.
-//! The current implementation is intentionally minimal and only
-//! coordinates the first visible boot steps.
+//! The current implementation introduces a minimal runtime
+//! initialization sequence without changing the overall boot behavior.
 
 use uefi::Status;
 
@@ -11,14 +11,60 @@ use uefi::Status;
 /// The current flow:
 /// - initializes console output
 /// - prints deterministic boot messages
+/// - runs a small runtime initialization sequence
 /// - returns success to UEFI
 pub fn run() -> Status {
-    if let Err(status) = crate::console::init() {
-        return status;
-    }
+    let console_state = match crate::console::init() {
+        Ok(state) => state,
+        Err(status) => return status,
+    };
 
     crate::console::write_line(crate::BOOT_MESSAGE);
     crate::console::write_line(crate::HELLO_MESSAGE);
 
+    initialize_runtime(console_state);
+
     Status::SUCCESS
+}
+
+/// Runs the minimal runtime initialization sequence.
+///
+/// This keeps the initialization order visible in boot logs while the
+/// underlying subsystems are still placeholders.
+fn initialize_runtime(console_state: crate::console::State) {
+    crate::console::write_line(crate::RUNTIME_INIT_START_MESSAGE);
+
+    crate::console::write_line(crate::console::state_summary(console_state));
+
+    crate::console::write_line("rustos: arch init start");
+    crate::console::write_line(crate::arch::name());
+    let arch_state = crate::arch::init();
+    crate::console::write_line(crate::arch::runtime_summary(arch_state));
+
+    crate::console::write_line(crate::INTERRUPT_INIT_MESSAGE);
+    if arch_state.is_interrupts_ready() {
+        crate::console::write_line("rustos: interrupt init complete");
+    } else {
+        crate::console::write_line("rustos: interrupt init deferred");
+    }
+
+    crate::console::write_line(crate::TIMER_INIT_MESSAGE);
+    if arch_state.is_timer_ready() {
+        crate::console::write_line("rustos: timer init complete");
+    } else {
+        crate::console::write_line("rustos: timer init deferred");
+    }
+
+    crate::console::write_line(crate::MEMORY_INIT_MESSAGE);
+    crate::console::write_line(crate::MEMORY_MAP_INIT_MESSAGE);
+    let memory_state = crate::memory::init();
+    crate::console::write_line(crate::FRAME_ALLOCATOR_INIT_MESSAGE);
+    crate::console::write_line(crate::memory::state_summary(memory_state));
+    if memory_state.heap_strategy() == crate::memory::HeapStrategy::Deferred {
+        crate::console::write_line(crate::HEAP_INIT_DEFERRED_MESSAGE);
+    }
+
+    crate::console::write_line(crate::panic::init());
+    crate::console::write_line(crate::IDLE_READY_MESSAGE);
+    crate::console::write_line(crate::RUNTIME_INIT_COMPLETE_MESSAGE);
 }

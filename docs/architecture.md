@@ -121,10 +121,20 @@ Kernel structure for growth:
 
 ### Stage 3
 Core runtime groundwork:
-- interrupt setup
-- timer support
-- memory initialization
+- explicit runtime initialization order
+- interrupt setup skeleton
+- timer groundwork
+- idle or halt behavior placeholder
+- memory initialization planning
 - allocator planning
+
+### Stage 4
+Memory management foundation:
+- memory map handling
+- frame allocator skeleton
+- explicit memory subsystem state
+- heap strategy decision
+- minimal allocator only if justified
 
 ## Kernel Design Direction
 
@@ -140,6 +150,16 @@ Expected early module boundaries:
 These boundaries are intended to keep the code understandable as the project grows.
 
 For Milestone 3, these modules should remain intentionally small. The goal is to make responsibilities obvious without introducing deep abstraction, generic frameworks, or speculative subsystem design.
+
+For Milestone 4, the same modules should begin to expose a clearer runtime sequence without becoming a full subsystem implementation. The immediate goal is to make initialization order visible and easy to reason about before introducing real interrupt tables, timer drivers, or memory managers.
+
+For Milestone 5, the memory module should become more explicit without pretending to be complete. The immediate goal is to introduce a small, well-documented memory subsystem shape that can answer:
+- whether memory initialization has happened
+- what memory information is currently known
+- where a future frame allocator will live
+- whether heap support exists yet
+
+This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code.
 
 ## Boot Strategy
 
@@ -177,6 +197,25 @@ The exact boot implementation should remain as small as possible in early milest
 
 As the kernel structure is introduced, boot behavior should stay unchanged while code is moved behind clearer module boundaries. Structural refactors should preserve the current boot path and deterministic output.
 
+As runtime groundwork is added, the boot path should log each initialization phase in plain language. Early milestones should prefer visible sequencing such as:
+- console initialization
+- architecture initialization
+- interrupt groundwork
+- timer groundwork
+- memory groundwork
+- transition to idle or halt behavior
+
+This keeps the system teachable and makes failures easier to localize during early boot.
+
+As memory groundwork is added, the memory path should remain equally explicit. Early memory code should prefer visible sequencing such as:
+- memory subsystem state creation
+- memory map placeholder or discovery boundary
+- frame allocator placeholder
+- heap support status
+- clear reporting of what is initialized versus deferred
+
+This keeps the memory subsystem understandable and prevents the project from drifting into opaque low-level setup too early.
+
 ## Tooling Strategy
 
 The project should use a minimal modern Rust workflow.
@@ -189,7 +228,7 @@ Planned tooling:
 - `cargo check`
 - `cargo xtask` for project-specific workflows
 - GitHub Actions for CI
-- direct QEMU-based local execution through a small EFI disk image workflow
+- direct QEMU-based local execution through a small EFI directory workflow
 
 Tooling should support the project without becoming a project of its own.
 

@@ -171,6 +171,13 @@ Deliverables:
 - idle or halt loop
 - improved boot and initialization logging
 
+Current implementation status:
+
+- the kernel now has a minimal module layout that can support runtime initialization growth
+- the next Milestone 4 step is to introduce a small explicit initialization sequence for architecture, interrupts, timer, and idle behavior
+- boot logs should be expanded to show initialization order without changing the current boot success path
+- interrupt and timer support should begin as placeholders or skeletons, not as a full subsystem
+
 Acceptance criteria:
 
 - initialization order is visible in logs
@@ -178,6 +185,8 @@ Acceptance criteria:
 - failures are easier to diagnose
 
 ### Milestone 5 — Memory Management Foundation
+
+Status: in progress
 
 Goal: introduce the smallest useful memory subsystem.
 
@@ -187,6 +196,13 @@ Deliverables:
 - frame allocator skeleton
 - heap strategy decision
 - minimal allocator only if justified
+
+Current implementation status:
+
+- the current memory module already exposes a small initialization state and is ready to grow into a clearer subsystem boundary
+- the next Milestone 5 step is to introduce a minimal memory map model and a frame allocator skeleton without claiming full paging or heap support
+- memory-related boot output should stay explicit and plain-language so contributors can see what is initialized and what is still deferred
+- allocator work should remain a documented decision first, and only become code if it is clearly needed by the next milestone
 
 Acceptance criteria:
 
