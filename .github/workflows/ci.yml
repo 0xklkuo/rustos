@@ -21,17 +21,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust toolchain with UEFI target
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-uefi
 
       - name: Cache cargo registry and build artifacts
         uses: Swatinem/rust-cache@v2
 
-      - name: Check workspace
-        run: cargo check --workspace --all-targets
+      - name: Run xtask check
+        run: cargo run -p xtask -- check
 
-  uefi-build:
-    name: Build UEFI target
+  fmt:
+    name: Rustfmt
     runs-on: ubuntu-latest
 
     steps:
@@ -46,26 +48,10 @@ jobs:
       - name: Cache cargo registry and build artifacts
         uses: Swatinem/rust-cache@v2
 
-      - name: Build kernel for UEFI target
-        run: cargo build -p kernel --target x86_64-unknown-uefi
+      - name: Run xtask fmt
+        run: cargo run -p xtask -- fmt
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain with rustfmt
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-  clippy:
+  lint:
     name: Clippy
     runs-on: ubuntu-latest
 
@@ -73,10 +59,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain with clippy
+      - name: Install Rust toolchain with UEFI target
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
+          targets: x86_64-unknown-uefi
 
-      - name: Run clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run xtask lint
+        run: cargo run -p xtask -- lint
+
+  run-test:
+    name: QEMU smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain with UEFI target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-uefi
+
+      - name: Install QEMU and OVMF
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 ovmf
+
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run xtask run-test
+        env:
+          RUSTOS_UEFI_CODE: /usr/share/OVMF/OVMF_CODE.fd
+          RUSTOS_UEFI_VARS: /usr/share/OVMF/OVMF_VARS.fd
+          RUSTOS_QEMU_TIMEOUT_SECS: "20"
+        run: cargo run -p xtask -- run-test

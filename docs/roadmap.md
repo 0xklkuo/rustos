@@ -78,8 +78,6 @@ Acceptance criteria:
 
 ### Milestone 1 — Minimal Bootable UEFI Kernel
 
-Status: in progress
-
 Goal: produce the smallest bootable kernel artifact with the simplest practical local workflow.
 
 Deliverables:
@@ -120,6 +118,14 @@ Deliverables:
 - `xtask check`
 - CI workflow
 - contributor-facing templates and guidance
+
+Current implementation status:
+
+- `xtask` already provides `check`, `fmt`, `lint`, `run`, and `run-test`
+- the local workflow now uses direct QEMU execution instead of a wrapper tool
+- CI already validates workspace checks, formatting, clippy, and the UEFI target build
+- contributor-facing templates and baseline guidance are already present
+- the next Milestone 2 work should focus on aligning CI and documentation around the `xtask` workflow
 
 Acceptance criteria:
 

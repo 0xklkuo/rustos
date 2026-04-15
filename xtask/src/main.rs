@@ -27,10 +27,11 @@ fn main() {
 
     let result = match command.to_string_lossy().as_ref() {
         "check" => cmd_check(),
+        "ci" => cmd_ci(),
         "fmt" => cmd_fmt(),
         "lint" => cmd_lint(),
         "run" => cmd_run(args.collect(), false),
-        "run-test" => cmd_run(args.collect(), true),
+        "run-test" | "test" => cmd_run(args.collect(), true),
         "help" | "--help" | "-h" => {
             print_help();
             Ok(())
@@ -46,6 +47,22 @@ fn main() {
 
 fn cmd_check() -> Result<(), String> {
     run_command("cargo", ["check", "--workspace", "--all-targets"])
+}
+
+fn cmd_ci() -> Result<(), String> {
+    cmd_fmt()?;
+    cmd_lint()?;
+    cmd_check()?;
+    run_command(
+        "cargo",
+        [
+            "build",
+            "--package",
+            KERNEL_PACKAGE,
+            "--target",
+            UEFI_TARGET,
+        ],
+    )
 }
 
 fn cmd_fmt() -> Result<(), String> {
@@ -469,10 +486,12 @@ fn print_help() {
     eprintln!();
     eprintln!("commands:");
     eprintln!("  check     run cargo check for the workspace");
+    eprintln!("  ci        run the CI-friendly local validation sequence");
     eprintln!("  fmt       check formatting with rustfmt");
     eprintln!("  lint      run clippy with warnings denied");
     eprintln!("  run       build the UEFI binary and launch it with qemu");
     eprintln!("  run-test  run qemu in bounded test mode and exit automatically");
+    eprintln!("  test      alias for run-test");
     eprintln!();
     eprintln!("run requirements:");
     eprintln!("  - qemu-system-x86_64 must be installed");

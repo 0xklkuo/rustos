@@ -153,11 +153,23 @@ Good documentation changes:
 
 Before submitting, validate your change as much as practical.
 
+Use the standard local validation flow:
+
+- `cargo run -p xtask -- check`
+- `cargo run -p xtask -- fmt`
+- `cargo run -p xtask -- lint`
+
+If your change affects the boot path or emulator workflow, also run:
+
+- `cargo run -p xtask -- run-test`
+
 At minimum:
 
 - ensure the project still builds
 - ensure formatting is correct
+- ensure lints pass
 - ensure any changed docs are accurate
+- ensure boot-related changes are validated with the bounded run flow when relevant
 
 As the project grows, more validation steps may be added.
 
