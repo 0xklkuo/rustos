@@ -36,23 +36,41 @@ fn initialize_runtime(console_state: crate::console::State) {
 
     crate::console::write_line(crate::console::state_summary(console_state));
 
-    crate::console::write_line("rustos: arch init start");
+    crate::console::write_line(crate::ARCH_INIT_START_MESSAGE);
     crate::console::write_line(crate::arch::name());
     let arch_state = crate::arch::init();
     crate::console::write_line(crate::arch::runtime_summary(arch_state));
+    crate::console::write_line(crate::ARCH_INIT_COMPLETE_MESSAGE);
+
+    let interrupt_state = crate::interrupt::init();
+
+    crate::console::write_line(crate::EXCEPTION_INIT_MESSAGE);
+    crate::console::write_line(crate::interrupt::exception_summary(
+        interrupt_state.exceptions(),
+    ));
+    if interrupt_state.exceptions().is_breakpoint_ready()
+        && interrupt_state.exceptions().is_double_fault_ready()
+    {
+        crate::console::write_line(crate::EXCEPTION_INIT_COMPLETE_MESSAGE);
+    } else {
+        crate::console::write_line(crate::EXCEPTION_INIT_PENDING_MESSAGE);
+    }
 
     crate::console::write_line(crate::INTERRUPT_INIT_MESSAGE);
-    if arch_state.is_interrupts_ready() {
-        crate::console::write_line("rustos: interrupt init complete");
+    crate::console::write_line(crate::interrupt::interrupt_summary(
+        interrupt_state.interrupts(),
+    ));
+    if interrupt_state.interrupts().is_timer_ready() {
+        crate::console::write_line(crate::INTERRUPT_INIT_COMPLETE_MESSAGE);
     } else {
-        crate::console::write_line("rustos: interrupt init deferred");
+        crate::console::write_line(crate::INTERRUPT_INIT_PENDING_MESSAGE);
     }
 
     crate::console::write_line(crate::TIMER_INIT_MESSAGE);
-    if arch_state.is_timer_ready() {
-        crate::console::write_line("rustos: timer init complete");
+    if interrupt_state.interrupts().is_timer_ready() {
+        crate::console::write_line(crate::TIMER_INIT_COMPLETE_MESSAGE);
     } else {
-        crate::console::write_line("rustos: timer init deferred");
+        crate::console::write_line(crate::TIMER_INIT_PENDING_MESSAGE);
     }
 
     crate::console::write_line(crate::MEMORY_INIT_MESSAGE);

@@ -174,9 +174,9 @@ Deliverables:
 Current implementation status:
 
 - the kernel now has a minimal module layout that can support runtime initialization growth
-- the next Milestone 4 step is to introduce a small explicit initialization sequence for architecture, interrupts, timer, and idle behavior
-- boot logs should be expanded to show initialization order without changing the current boot success path
-- interrupt and timer support should begin as placeholders or skeletons, not as a full subsystem
+- the boot flow now exposes a small explicit initialization sequence for architecture, interrupts, timer, memory, panic, and idle behavior
+- boot logs now show initialization order without changing the current boot success path
+- interrupt and timer support currently remain placeholders or skeletons, not a full subsystem
 
 Acceptance criteria:
 
@@ -226,15 +226,45 @@ Deliverables:
 Current implementation status:
 
 - the project now has a minimal bootable kernel foundation, a clear module layout, and explicit runtime logging
-- the next Milestone 6 step is to define what "Unix-like" means for `rustos` without implying full Unix compatibility
-- the initial direction should stay documentation-first and focus on syscall shape, task boundaries, VFS direction, and user/kernel separation
-- this milestone should make future subsystem work easier to evaluate against clear goals and non-goals
+- the project now also has a dedicated Unix-like direction note that defines syscall, task, VFS, and user/kernel boundary goals
+- the Unix-like direction remains documentation-first and does not imply full Unix compatibility
+- this milestone now gives future subsystem work clearer goals and non-goals
 
 Acceptance criteria:
 
 - the meaning of "Unix-like" is clearly defined for this project
 - non-goals remain explicit
 - the roadmap stays realistic and educational
+
+### U2 — Exception and Interrupt Groundwork
+
+Status: in progress
+
+Goal: introduce the smallest useful exception and interrupt foundation aligned with the current minimal kernel direction.
+
+Deliverables:
+
+- exception handling direction
+- breakpoint and double-fault groundwork
+- hardware interrupt groundwork
+- timer-first interrupt direction
+- host-testable interrupt state
+- bounded QEMU validation for interrupt-related runtime behavior
+
+Current implementation status:
+
+- the project now has a host-testable `kernel-core` crate for pure logic and unit tests
+- the next U2 step is to introduce explicit exception and interrupt subsystem state instead of treating interrupts as part of generic architecture state
+- the boot flow should report exception and interrupt initialization separately in plain language
+- exception and interrupt work should stay minimal and avoid full IDT or PIC complexity until the subsystem boundaries are clearer
+
+Acceptance criteria:
+
+- exception and interrupt groundwork are represented explicitly in code
+- host-side unit tests cover the new pure logic
+- boot logs show exception and interrupt initialization separately
+- bounded QEMU validation still passes
+- the implementation stays small and educational
 
 ## Suggested Release Shape
 
@@ -245,6 +275,7 @@ A practical early release sequence:
 - `v0.3.0`: developer workflow and CI baseline
 - `v0.4.0`: kernel structure and low-level groundwork
 - `v0.5.0`: memory foundation and Unix-like direction notes
+- `v0.6.0`: testing foundation and exception/interrupt groundwork
 
 ## Success Metrics
 

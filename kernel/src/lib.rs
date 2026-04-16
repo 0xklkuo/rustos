@@ -9,6 +9,7 @@
 pub mod arch;
 pub mod boot;
 pub mod console;
+pub mod interrupt;
 pub mod memory;
 pub mod panic;
 
@@ -27,17 +28,32 @@ pub const ARCH_INIT_START_MESSAGE: &str = "rustos: arch init start";
 /// Runtime log message printed after architecture-specific setup completes.
 pub const ARCH_INIT_COMPLETE_MESSAGE: &str = "rustos: arch init complete";
 
+/// Runtime log message printed before exception groundwork begins.
+pub const EXCEPTION_INIT_MESSAGE: &str = "rustos: exception init";
+
+/// Runtime log message printed while exception groundwork is still pending.
+pub const EXCEPTION_INIT_PENDING_MESSAGE: &str = "rustos: exception init pending";
+
+/// Runtime log message printed after exception groundwork completes.
+pub const EXCEPTION_INIT_COMPLETE_MESSAGE: &str = "rustos: exception init complete";
+
 /// Runtime log message printed before interrupt groundwork begins.
 pub const INTERRUPT_INIT_MESSAGE: &str = "rustos: interrupt init";
 
 /// Runtime log message printed while interrupt groundwork is still pending.
 pub const INTERRUPT_INIT_PENDING_MESSAGE: &str = "rustos: interrupt init pending";
 
+/// Runtime log message printed after interrupt groundwork completes.
+pub const INTERRUPT_INIT_COMPLETE_MESSAGE: &str = "rustos: interrupt init complete";
+
 /// Runtime log message printed before timer groundwork begins.
 pub const TIMER_INIT_MESSAGE: &str = "rustos: timer init";
 
 /// Runtime log message printed while timer groundwork is still pending.
 pub const TIMER_INIT_PENDING_MESSAGE: &str = "rustos: timer init pending";
+
+/// Runtime log message printed after timer groundwork completes.
+pub const TIMER_INIT_COMPLETE_MESSAGE: &str = "rustos: timer init complete";
 
 /// Runtime log message printed before memory groundwork begins.
 pub const MEMORY_INIT_MESSAGE: &str = "rustos: memory init";

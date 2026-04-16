@@ -148,6 +148,7 @@ Kernel structure for growth:
 ### Stage 3
 Core runtime groundwork:
 - explicit runtime initialization order
+- exception groundwork
 - interrupt setup skeleton
 - timer groundwork
 - idle or halt behavior placeholder
@@ -170,6 +171,7 @@ Expected early module boundaries:
 - `arch` — architecture-specific code and target-specific setup
 - `boot` — boot entry flow and early initialization order
 - `console` — early output and logging helpers
+- `interrupt` — exception and hardware interrupt groundwork
 - `panic` — panic reporting and panic-related support
 - `memory` — memory initialization and allocation groundwork
 
@@ -178,6 +180,15 @@ These boundaries are intended to keep the code understandable as the project gro
 For Milestone 3, these modules should remain intentionally small. The goal is to make responsibilities obvious without introducing deep abstraction, generic frameworks, or speculative subsystem design.
 
 For Milestone 4, the same modules should begin to expose a clearer runtime sequence without becoming a full subsystem implementation. The immediate goal is to make initialization order visible and easy to reason about before introducing real interrupt tables, timer drivers, or memory managers.
+
+For the next exception and interrupt groundwork stage, the interrupt module should become more explicit without pretending to be complete. The immediate goal is to introduce a small, well-documented subsystem shape that can answer:
+- whether exception groundwork has been initialized
+- whether breakpoint and double-fault handling are planned and visible
+- whether timer interrupt groundwork exists
+- which interrupt paths are intentionally deferred
+- how success and failure should appear in logs and bounded emulator tests
+
+This stage should still avoid premature IDT, PIC, APIC, or keyboard-driver complexity that is not yet justified by the code.
 
 For Milestone 5, the memory module should become more explicit without pretending to be complete. The immediate goal is to introduce a small, well-documented memory subsystem shape that can answer:
 - whether memory initialization has happened
@@ -226,12 +237,22 @@ As the kernel structure is introduced, boot behavior should stay unchanged while
 As runtime groundwork is added, the boot path should log each initialization phase in plain language. Early milestones should prefer visible sequencing such as:
 - console initialization
 - architecture initialization
+- exception groundwork
 - interrupt groundwork
 - timer groundwork
 - memory groundwork
 - transition to idle or halt behavior
 
 This keeps the system teachable and makes failures easier to localize during early boot.
+
+As exception and interrupt groundwork is added, the project should keep the subsystem narrow and explicit. Early interrupt-related code should prefer visible sequencing such as:
+- exception subsystem state creation
+- breakpoint and double-fault groundwork reporting
+- hardware interrupt groundwork reporting
+- timer interrupt readiness reporting
+- clear separation between implemented paths and deferred paths
+
+This keeps low-level runtime work understandable and avoids introducing a large interrupt framework before the project has a concrete need for it.
 
 As memory groundwork is added, the memory path should remain equally explicit. Early memory code should prefer visible sequencing such as:
 - memory subsystem state creation

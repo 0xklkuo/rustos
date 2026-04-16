@@ -32,6 +32,12 @@ QEMU tests are slower and more fragile than unit tests. They should validate onl
 - exception behavior
 - interrupt behavior
 
+As exception and interrupt groundwork is introduced, emulator tests should stay narrow:
+- one smoke test for the expected exception path
+- one smoke test for the expected interrupt path
+- clear success markers in output
+- bounded execution with explicit timeout behavior
+
 ### 3. Keep tests bounded
 
 Automated test runs must not hang indefinitely.
@@ -111,6 +117,13 @@ Examples:
 
 These tests should be few and meaningful.
 
+For exception and interrupt groundwork, prefer smoke tests that answer one question each:
+- does the expected exception handler path run?
+- does the expected interrupt initialization path run?
+- does the expected success marker appear before timeout?
+
+Avoid combining many low-level behaviors into one emulator test.
+
 ### Layer 4 — Negative-path emulator tests
 
 Use emulator tests for deliberate failure paths only when the subsystem exists.
@@ -122,6 +135,11 @@ Examples:
 - invalid syscall handling later
 
 These should be added carefully and only when the corresponding subsystem is real.
+
+For exception and interrupt work, add negative-path tests gradually:
+- start with a breakpoint or other controlled exception smoke test
+- add double-fault validation only after the basic exception path is stable
+- add interrupt-specific negative tests only when the interrupt subsystem has a clear success path and failure model
 
 ## What to Test First
 
@@ -210,9 +228,12 @@ These should run as bounded smoke tests:
 
 - boot test
 - runtime log validation
-- later: exception and interrupt smoke tests
+- later: exception smoke tests
+- later: interrupt smoke tests
 
 This split keeps feedback fast while still validating the real boot path.
+
+When exception and interrupt smoke tests are added, keep them separate from the basic boot smoke test whenever practical. This makes failures easier to localize and keeps CI output easier to understand.
 
 ## When to Add a Unit Test
 
@@ -229,6 +250,11 @@ Add a QEMU test when:
 - the behavior depends on CPU/runtime state
 - the behavior cannot be validated meaningfully as a unit test
 - the test validates a real milestone boundary
+
+For exception and interrupt groundwork, add a QEMU test only when:
+- the handler or initialization path is visible in logs or another explicit success marker
+- the test can be bounded reliably
+- the behavior is narrow enough that a failure points to one subsystem first
 
 ## What to Avoid
 
@@ -264,6 +290,16 @@ The testing strategy is working if:
 - add interrupt smoke tests
 - add memory bookkeeping tests
 - add syscall and task model tests when those subsystems exist
+
+### Exception and interrupt test rollout
+A practical rollout order is:
+1. boot smoke test
+2. runtime initialization smoke test
+3. controlled exception smoke test
+4. interrupt initialization smoke test
+5. double-fault or other negative-path validation only after the basic paths are stable
+
+This order keeps the low-level test surface understandable and avoids introducing many fragile emulator tests at once.
 
 ## Summary
 
