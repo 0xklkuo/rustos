@@ -212,6 +212,8 @@ Acceptance criteria:
 
 ### Milestone 6 — Unix-like Direction Definition
 
+Status: in progress
+
 Goal: define the first Unix-like boundaries without pretending to be complete.
 
 Deliverables:
@@ -220,6 +222,13 @@ Deliverables:
 - task or process model sketch
 - VFS direction note
 - user and kernel boundary plan
+
+Current implementation status:
+
+- the project now has a minimal bootable kernel foundation, a clear module layout, and explicit runtime logging
+- the next Milestone 6 step is to define what "Unix-like" means for `rustos` without implying full Unix compatibility
+- the initial direction should stay documentation-first and focus on syscall shape, task boundaries, VFS direction, and user/kernel separation
+- this milestone should make future subsystem work easier to evaluate against clear goals and non-goals
 
 Acceptance criteria:
 

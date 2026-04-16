@@ -63,6 +63,7 @@ Current milestone:
 See:
 - `docs/roadmap.md`
 - `docs/architecture.md`
+- `docs/unix-like.md`
 - `docs/decisions/0001-target-platform.md`
 
 ## Local Development

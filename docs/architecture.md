@@ -56,6 +56,32 @@ Benefits:
 
 Support for `aarch64` may be considered later after the MVP foundation is stable.
 
+## Unix-like Direction
+
+`rustos` aims to grow toward a small Unix-like teaching kernel, but this direction should stay explicit and intentionally incomplete during the MVP.
+
+For this project, "Unix-like" currently means:
+- a clear kernel and user boundary
+- a small syscall-oriented execution model
+- a simple task or process direction
+- a filesystem abstraction boundary
+- plain-language documentation of what is implemented versus deferred
+
+For the current milestones, this direction is a design guide, not a promise of feature completeness.
+
+The project should avoid:
+- claiming POSIX compatibility too early
+- introducing a large syscall surface before the runtime and memory foundations are stable
+- designing a full VFS before there is a concrete need for one
+- adding user-space support before the kernel boundary is documented clearly
+
+A dedicated Unix-like direction note should define:
+- syscall direction
+- task and process model direction
+- VFS direction
+- user and kernel boundary expectations
+- explicit non-goals for the MVP
+
 ## High-Level Repository Structure
 
 The project uses a monorepo with a small Rust workspace.
@@ -215,6 +241,14 @@ As memory groundwork is added, the memory path should remain equally explicit. E
 - clear reporting of what is initialized versus deferred
 
 This keeps the memory subsystem understandable and prevents the project from drifting into opaque low-level setup too early.
+
+As the Unix-like direction becomes more concrete, it should be layered on top of these foundations rather than introduced in parallel as a large design exercise. In practice, that means:
+- syscall direction should follow the runtime and memory groundwork
+- task and process direction should follow clearer execution and ownership boundaries
+- VFS direction should follow a concrete storage and memory story
+- user-space direction should remain deferred until the kernel boundary is explicit and teachable
+
+This keeps the Unix-like direction realistic, incremental, and aligned with the project's educational goals.
 
 ## Tooling Strategy
 
