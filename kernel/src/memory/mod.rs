@@ -139,3 +139,51 @@ pub const fn state_summary(state: State) -> &'static str {
 pub const fn frame_allocator() -> FrameAllocator {
     FrameAllocator::new()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        FrameAllocator, HeapStrategy, State, frame_allocator, init, is_initialized, state_summary,
+    };
+
+    #[test]
+    fn new_state_starts_uninitialized() {
+        let state = State::new();
+
+        assert!(!state.is_initialized());
+        assert!(!state.is_frame_allocator_ready());
+        assert_eq!(state.heap_strategy(), HeapStrategy::Deferred);
+    }
+
+    #[test]
+    fn init_returns_ready_memory_foundation() {
+        let state = init();
+
+        assert!(state.is_initialized());
+        assert!(state.is_frame_allocator_ready());
+        assert_eq!(state.heap_strategy(), HeapStrategy::Deferred);
+        assert_eq!(state_summary(state), "rustos: memory foundation ready");
+    }
+
+    #[test]
+    fn module_initialized_helper_matches_init_state() {
+        assert!(is_initialized());
+    }
+
+    #[test]
+    fn frame_allocator_starts_at_zero() {
+        let allocator = FrameAllocator::new();
+
+        assert_eq!(allocator.next_frame(), 0);
+        assert_eq!(frame_allocator().next_frame(), 0);
+    }
+
+    #[test]
+    fn frame_allocator_reserve_advances_next_frame() {
+        let allocator = FrameAllocator::new();
+        let allocator = allocator.reserve();
+        let allocator = allocator.reserve();
+
+        assert_eq!(allocator.next_frame(), 2);
+    }
+}

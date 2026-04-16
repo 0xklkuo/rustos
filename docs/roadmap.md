@@ -121,7 +121,7 @@ Deliverables:
 
 Current implementation status:
 
-- `xtask` already provides `check`, `fmt`, `lint`, `run`, and `run-test`
+- `xtask` already provides `check`, `fmt`, `lint`, and `run`
 - the local workflow now uses direct QEMU execution instead of a wrapper tool
 - CI already validates workspace checks, formatting, clippy, and the UEFI target build
 - contributor-facing templates and baseline guidance are already present

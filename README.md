@@ -56,7 +56,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone 2 — developer workflow and CI
+- Milestone U1 — testing foundation and `blog_os` adoption plan
 
 ## Roadmap
 
@@ -64,11 +64,13 @@ See:
 - `docs/roadmap.md`
 - `docs/architecture.md`
 - `docs/unix-like.md`
+- `docs/testing.md`
+- `docs/blog-os-adoption.md`
 - `docs/decisions/0001-target-platform.md`
 
 ## Local Development
 
-Milestone 2 focuses on making the project easier to run, validate, and contribute to while keeping the workflow minimal and explicit.
+The current workflow focuses on keeping validation explicit, minimal, and aligned between local development and CI.
 
 ### Requirements
 
@@ -99,8 +101,9 @@ The current workflow is:
 1. `cargo run -p xtask -- check`
 2. `cargo run -p xtask -- fmt`
 3. `cargo run -p xtask -- lint`
-4. `cargo run -p xtask -- run-test`
-5. `cargo run -p xtask -- run` when you want an interactive QEMU session
+4. `cargo run -p xtask -- test-unit`
+5. `cargo run -p xtask -- test-qemu`
+6. `cargo run -p xtask -- run` when you want an interactive QEMU session
 
 This keeps local development and CI aligned around the same commands.
 
@@ -118,9 +121,17 @@ Run lints:
 
 - `cargo run -p xtask -- lint`
 
-Run a bounded boot test:
+Run host-side unit tests:
 
-- `cargo run -p xtask -- run-test`
+- `cargo run -p xtask -- test-unit`
+
+Run a bounded QEMU boot test:
+
+- `cargo run -p xtask -- test-qemu`
+
+Run the full local test flow:
+
+- `cargo run -p xtask -- test`
 
 Build and run the UEFI application interactively:
 
@@ -133,7 +144,9 @@ The current `xtask` commands are:
 - `check` — runs `cargo check --workspace --all-targets`
 - `fmt` — checks formatting with `rustfmt`
 - `lint` — runs `clippy` with warnings denied
-- `run-test` — launches QEMU in bounded test mode and exits automatically after success or timeout
+- `test-unit` — runs host-side unit tests for workspace crates
+- `test-qemu` — launches QEMU in bounded test mode and exits automatically after success or timeout
+- `test` — runs the unit-test flow first, then the bounded QEMU test
 - `run` — launches QEMU interactively for manual inspection
 
 The boot commands:
@@ -149,15 +162,22 @@ Example with extra QEMU arguments:
 
 - `cargo run -p xtask -- run -m 512M`
 
-### Bounded Run Mode
+### Split Test Workflow
 
 For local interactive use, `cargo run -p xtask -- run` keeps QEMU attached so you can inspect the boot flow manually.
 
-For editor agents, CI, and sandboxed environments, use:
+For automated validation, the project now uses a split test workflow:
 
-- `cargo run -p xtask -- run-test`
+- `cargo run -p xtask -- test-unit`
+- `cargo run -p xtask -- test-qemu`
 
-This mode:
+Use:
+
+- `cargo run -p xtask -- test`
+
+when you want the standard combined local test flow.
+
+The bounded QEMU test mode:
 
 - captures QEMU output
 - waits for the expected boot marker
@@ -166,9 +186,9 @@ This mode:
 
 You can change the timeout with:
 
-- `RUSTOS_QEMU_TIMEOUT_SECS=15 cargo run -p xtask -- run-test`
+- `RUSTOS_QEMU_TIMEOUT_SECS=15 cargo run -p xtask -- test-qemu`
 
-This keeps the default developer experience simple while making automated validation faster and less likely to hang.
+This keeps fast tests separate from emulator tests while preserving a simple combined command for contributors.
 
 ### Firmware Notes
 
@@ -204,7 +224,8 @@ This is a bootable foundation, not yet a full kernel runtime.
 - CI should use the same `xtask` commands as local development whenever practical.
 - The direct QEMU workflow is preferred because it is simpler to understand and easier to debug than a wrapper-based runner.
 - The boot directory includes a `startup.nsh` script so the UEFI shell can launch `BOOTX64.EFI` automatically.
-- `run-test` is the preferred command for automated environments because it does not hang indefinitely.
+- `test-qemu` is the preferred command for automated environments because it does not hang indefinitely.
+- `test-unit` is intended for fast host-side feedback before running emulator-based validation.
 - More detailed boot and debugging guidance can be added once the run path is stable across environments.
 
 ## Contributing
@@ -225,10 +246,15 @@ Before opening a pull request, run:
 - `cargo run -p xtask -- check`
 - `cargo run -p xtask -- fmt`
 - `cargo run -p xtask -- lint`
+- `cargo run -p xtask -- test-unit`
 
 If your change affects boot behavior or the QEMU workflow, also run:
 
-- `cargo run -p xtask -- run-test`
+- `cargo run -p xtask -- test-qemu`
+
+If you want the standard combined local validation flow, run:
+
+- `cargo run -p xtask -- test`
 
 ## License
 

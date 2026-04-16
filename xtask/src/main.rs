@@ -31,7 +31,9 @@ fn main() {
         "fmt" => cmd_fmt(),
         "lint" => cmd_lint(),
         "run" => cmd_run(args.collect(), false),
-        "run-test" | "test" => cmd_run(args.collect(), true),
+        "test" => cmd_test(args.collect()),
+        "test-qemu" => cmd_run(args.collect(), true),
+        "test-unit" => cmd_test_unit(),
         "help" | "--help" | "-h" => {
             print_help();
             Ok(())
@@ -53,6 +55,7 @@ fn cmd_ci() -> Result<(), String> {
     cmd_fmt()?;
     cmd_lint()?;
     cmd_check()?;
+    cmd_test_unit()?;
     run_command(
         "cargo",
         [
@@ -102,6 +105,18 @@ fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), Str
     } else {
         run_qemu(&firmware_code, &firmware_vars, &image_dir, extra_args)
     }
+}
+
+fn cmd_test(extra_args: Vec<OsString>) -> Result<(), String> {
+    cmd_test_unit()?;
+    cmd_run(extra_args, true)
+}
+
+fn cmd_test_unit() -> Result<(), String> {
+    run_command(
+        "cargo",
+        ["test", "--workspace", "--exclude", KERNEL_PACKAGE],
+    )
 }
 
 fn build_efi() -> Result<PathBuf, String> {
@@ -485,13 +500,14 @@ fn print_help() {
     eprintln!("  cargo run -p xtask -- <command>");
     eprintln!();
     eprintln!("commands:");
-    eprintln!("  check     run cargo check for the workspace");
-    eprintln!("  ci        run the CI-friendly local validation sequence");
-    eprintln!("  fmt       check formatting with rustfmt");
-    eprintln!("  lint      run clippy with warnings denied");
-    eprintln!("  run       build the UEFI binary and launch it with qemu");
-    eprintln!("  run-test  run qemu in bounded test mode and exit automatically");
-    eprintln!("  test      alias for run-test");
+    eprintln!("  check      run cargo check for the workspace");
+    eprintln!("  ci         run the CI-friendly local validation sequence");
+    eprintln!("  fmt        check formatting with rustfmt");
+    eprintln!("  lint       run clippy with warnings denied");
+    eprintln!("  run        build the UEFI binary and launch it with qemu");
+    eprintln!("  test       run unit tests, then run qemu in bounded test mode");
+    eprintln!("  test-qemu  run qemu in bounded test mode and exit automatically");
+    eprintln!("  test-unit  run host-side unit tests for workspace crates");
     eprintln!();
     eprintln!("run requirements:");
     eprintln!("  - qemu-system-x86_64 must be installed");

@@ -161,7 +161,7 @@ Use the standard local validation flow:
 
 If your change affects the boot path or emulator workflow, also run:
 
-- `cargo run -p xtask -- run-test`
+- `cargo run -p xtask -- test`
 
 At minimum:
 

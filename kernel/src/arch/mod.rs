@@ -4,6 +4,7 @@
 //! shared kernel logic. The current implementation stays intentionally
 //! small and only exposes the minimal placeholders needed by the early
 //! boot flow.
+#![cfg_attr(test, allow(clippy::bool_assert_comparison))]
 
 /// Small summary of architecture runtime state during early boot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -83,4 +84,34 @@ pub const fn runtime_summary(state: RuntimeState) -> &'static str {
 /// interrupt groundwork is in place.
 pub fn idle() {
     core::hint::spin_loop();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{RuntimeState, init, runtime_summary};
+
+    #[test]
+    fn new_runtime_state_starts_uninitialized() {
+        let state = RuntimeState::new();
+
+        assert_eq!(state.is_interrupts_ready(), false);
+        assert_eq!(state.is_timer_ready(), false);
+        assert_eq!(runtime_summary(state), "arch runtime not initialized");
+    }
+
+    #[test]
+    fn init_marks_interrupts_and_timer_ready() {
+        let state = init();
+
+        assert_eq!(state.is_interrupts_ready(), true);
+        assert_eq!(state.is_timer_ready(), true);
+        assert_eq!(runtime_summary(state), "arch runtime ready");
+    }
+
+    #[test]
+    fn default_runtime_state_matches_new() {
+        let state = RuntimeState::default();
+
+        assert_eq!(state, RuntimeState::new());
+    }
 }
