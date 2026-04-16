@@ -1,36 +1,14 @@
+#![cfg_attr(test, allow(clippy::bool_assert_comparison))]
+
 //! Early console support for `rustos`.
 //!
 //! This module keeps early output intentionally small and explicit.
 //! For now it is a thin wrapper around the UEFI text console.
 
+pub use kernel_core::console::{State, state_summary};
+
 use uefi::Status;
 use uefi::println;
-
-/// Small summary of early console state during boot.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct State {
-    initialized: bool,
-}
-
-impl State {
-    /// Creates a new uninitialized console state.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self { initialized: false }
-    }
-
-    /// Returns whether the console has been initialized.
-    #[must_use]
-    pub const fn is_initialized(self) -> bool {
-        self.initialized
-    }
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 /// Initializes early console support.
 ///
@@ -38,18 +16,8 @@ impl Default for State {
 /// printing and panic output work during early boot.
 pub fn init() -> Result<State, Status> {
     uefi::helpers::init()
-        .map(|_| State { initialized: true })
+        .map(|_| State::initialized())
         .map_err(|error| error.status())
-}
-
-/// Returns a short plain-language summary of the current console state.
-#[must_use]
-pub const fn state_summary(state: State) -> &'static str {
-    if state.is_initialized() {
-        "rustos: console init complete"
-    } else {
-        "rustos: console init deferred"
-    }
 }
 
 /// Prints a single line to the early console.
@@ -65,7 +33,14 @@ mod tests {
     fn new_console_state_starts_uninitialized() {
         let state = State::new();
 
-        assert!(!state.is_initialized());
+        assert_eq!(state.is_initialized(), false);
+    }
+
+    #[test]
+    fn initialized_console_state_reports_initialized() {
+        let state = State::initialized();
+
+        assert_eq!(state.is_initialized(), true);
     }
 
     #[test]
@@ -84,7 +59,7 @@ mod tests {
 
     #[test]
     fn state_summary_reports_complete_for_initialized_console() {
-        let state = State { initialized: true };
+        let state = State::initialized();
 
         assert_eq!(state_summary(state), "rustos: console init complete");
     }

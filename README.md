@@ -47,6 +47,7 @@ The initial MVP focuses on:
 This repository is organized as a small monorepo:
 
 - `kernel/` — kernel crate and OS code
+- `kernel-core/` — host-testable pure logic shared with the kernel
 - `xtask/` — developer workflow commands
 - `docs/` — roadmap, architecture notes, and design decisions
 - `.github/` — CI and contribution templates
@@ -105,6 +106,8 @@ The current workflow is:
 5. `cargo run -p xtask -- test-qemu`
 6. `cargo run -p xtask -- run` when you want an interactive QEMU session
 
+`test-unit` is intended to cover host-testable pure logic, which should increasingly live in `kernel-core/` instead of the UEFI-facing `kernel/` crate.
+
 This keeps local development and CI aligned around the same commands.
 
 ### Common Commands
@@ -144,7 +147,7 @@ The current `xtask` commands are:
 - `check` — runs `cargo check --workspace --all-targets`
 - `fmt` — checks formatting with `rustfmt`
 - `lint` — runs `clippy` with warnings denied
-- `test-unit` — runs host-side unit tests for workspace crates
+- `test-unit` — runs host-side unit tests for workspace crates, especially pure logic in `kernel-core/`
 - `test-qemu` — launches QEMU in bounded test mode and exits automatically after success or timeout
 - `test` — runs the unit-test flow first, then the bounded QEMU test
 - `run` — launches QEMU interactively for manual inspection
@@ -226,6 +229,7 @@ This is a bootable foundation, not yet a full kernel runtime.
 - The boot directory includes a `startup.nsh` script so the UEFI shell can launch `BOOTX64.EFI` automatically.
 - `test-qemu` is the preferred command for automated environments because it does not hang indefinitely.
 - `test-unit` is intended for fast host-side feedback before running emulator-based validation.
+- Host-testable pure logic should prefer `kernel-core/`, while firmware-facing runtime code should remain in `kernel/`.
 - More detailed boot and debugging guidance can be added once the run path is stable across environments.
 
 ## Contributing
