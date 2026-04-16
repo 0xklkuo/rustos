@@ -2,9 +2,9 @@
 //!
 //! This module keeps target-specific runtime groundwork separate from
 //! shared kernel logic. The current implementation stays intentionally
-//! small and delegates pure runtime state logic to `kernel_core`.
+//! small and delegates pure runtime state logic to `nucleus`.
 
-pub use kernel_core::arch::{RuntimeState, init, runtime_summary};
+pub use nucleus::arch::{RuntimeState, init, runtime_summary};
 
 /// Returns the current architecture name used by the kernel.
 ///

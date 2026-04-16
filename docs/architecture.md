@@ -163,6 +163,9 @@ Memory management foundation:
 - heap strategy decision
 - minimal allocator only if justified
 
+See `docs/roadmap.md` for the implementation sequence and milestone planning for the Unix-like MVP track.
+
+
 ## Kernel Design Direction
 
 The kernel should remain small and modular.

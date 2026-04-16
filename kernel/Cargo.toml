@@ -17,6 +17,6 @@ bench = false
 doctest = false
 
 [dependencies]
-kernel-core = { path = "../kernel-core" }
+nucleus = { path = "../nucleus" }
 uefi = { version = "0.37.0", features = ["logger", "panic_handler"] }
 log = "0.4"

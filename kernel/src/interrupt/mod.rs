@@ -1,10 +1,10 @@
 //! Exception and interrupt groundwork for `rustos`.
 //!
 //! This module keeps the firmware-facing kernel crate small by re-exporting
-//! host-testable interrupt state from `kernel-core` and providing only the
+//! host-testable interrupt state from `nucleus` and providing only the
 //! runtime-facing pieces that belong in the kernel crate.
 
-pub use kernel_core::interrupt::{
+pub use nucleus::interrupt::{
     ExceptionState, InterruptState, State, exception_summary, init, interrupt_summary,
     state_summary,
 };

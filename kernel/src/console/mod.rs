@@ -5,7 +5,7 @@
 //! This module keeps early output intentionally small and explicit.
 //! For now it is a thin wrapper around the UEFI text console.
 
-pub use kernel_core::console::{State, state_summary};
+pub use nucleus::console::{State, state_summary};
 
 use uefi::Status;
 use uefi::println;

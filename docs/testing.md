@@ -164,7 +164,7 @@ These tests are valuable because they:
 - improve discipline
 - do not require firmware or QEMU
 
-To keep these tests easy to run on the host, pure logic should gradually move into a small host-testable crate such as `kernel-core` instead of staying tightly coupled to the UEFI-facing kernel crate.
+To keep these tests easy to run on the host, pure logic should gradually move into a small host-testable crate such as `nucleus` instead of staying tightly coupled to the UEFI-facing kernel crate.
 
 That host-testable crate should contain:
 - runtime state types
@@ -207,7 +207,7 @@ Recommended commands:
 - `cargo run -p xtask -- test-unit`
 - `cargo run -p xtask -- test-qemu`
 
-`test-unit` should prefer host-side tests for crates that contain pure logic, such as a future `kernel-core` crate, instead of trying to force all kernel-adjacent tests through the UEFI-facing runtime crate.
+`test-unit` should prefer host-side tests for crates that contain pure logic, such as a future `nucleus` crate, instead of trying to force all kernel-adjacent tests through the UEFI-facing runtime crate.
 
 If a combined local validation command exists, it should call these in a clear order.
 
@@ -283,7 +283,7 @@ The testing strategy is working if:
 - add unit tests for current pure logic modules
 - split local test workflow into unit and QEMU commands
 - align CI with the same split
-- extract host-testable pure logic into a small crate such as `kernel-core`
+- extract host-testable pure logic into a small crate such as `nucleus`
 
 ### Later steps
 - add exception smoke tests

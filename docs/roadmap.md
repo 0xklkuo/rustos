@@ -236,6 +236,41 @@ Acceptance criteria:
 - non-goals remain explicit
 - the roadmap stays realistic and educational
 
+## Unix-like MVP Implementation Phases
+
+These U-series phases extend the earlier foundation milestones and provide the implementation order for the Unix-like MVP. They should stay aligned with:
+
+- `docs/blog-os-adoption.md`
+- `docs/testing.md`
+- `docs/unix-like.md`
+
+The purpose of these phases is to keep the next work explicit, incremental, and easy to evaluate against the project's minimal and educational goals.
+
+### U1 — Testing Foundation and `blog_os` Adoption Plan
+
+Goal: establish the testing and reference policy needed for deeper kernel work.
+
+Deliverables:
+
+- testing strategy
+- `blog_os` adoption policy
+- split host-side unit tests from bounded QEMU tests
+- keep local and CI validation aligned around explicit workflow commands
+
+Current implementation status:
+
+- the project now has a documented testing strategy
+- the project now has a documented `blog_os` adoption policy
+- the local and CI workflows now distinguish host-side unit tests from bounded QEMU tests
+- the project now has a host-testable `nucleus` crate for pure logic and unit tests
+
+Acceptance criteria:
+
+- the testing strategy is documented clearly
+- the `blog_os` adoption policy is documented clearly
+- host-side unit tests and bounded QEMU tests are separate and explicit
+- local and CI validation use the same workflow shape
+
 ### U2 — Exception and Interrupt Groundwork
 
 Status: in progress
@@ -253,10 +288,10 @@ Deliverables:
 
 Current implementation status:
 
-- the project now has a host-testable `kernel-core` crate for pure logic and unit tests
-- the next U2 step is to introduce explicit exception and interrupt subsystem state instead of treating interrupts as part of generic architecture state
-- the boot flow should report exception and interrupt initialization separately in plain language
-- exception and interrupt work should stay minimal and avoid full IDT or PIC complexity until the subsystem boundaries are clearer
+- the project now has explicit exception and interrupt subsystem state instead of treating interrupts as part of generic architecture state
+- the boot flow now reports exception and interrupt initialization separately in plain language
+- exception and interrupt work still stays minimal and avoids full IDT or PIC complexity
+- host-side unit tests now cover the new pure interrupt logic in `nucleus`
 
 Acceptance criteria:
 
@@ -265,6 +300,74 @@ Acceptance criteria:
 - boot logs show exception and interrupt initialization separately
 - bounded QEMU validation still passes
 - the implementation stays small and educational
+
+### U3 — Controlled Exception Path
+
+Goal: introduce the first narrow, testable exception path.
+
+Deliverables:
+
+- one controlled exception path
+- bounded emulator validation for the chosen exception
+- explicit success and failure reporting
+- clearer direction for later double-fault handling
+
+Acceptance criteria:
+
+- one exception path is implemented and visible
+- the exception path is validated through bounded QEMU testing
+- the implementation remains narrow and easy to reason about
+
+### U4 — Real Memory Foundation
+
+Goal: move from placeholder memory state to real discovered memory information.
+
+Deliverables:
+
+- real memory map boundary
+- frame allocator groundwork backed by discovered memory
+- host-side tests for memory bookkeeping where possible
+
+Acceptance criteria:
+
+- memory work is backed by real discovered memory information
+- the frame allocator direction is connected to actual memory information
+- the implementation remains explicit and minimal
+
+### U5 — Paging and Heap Direction
+
+Goal: define the smallest useful paging and heap direction.
+
+Deliverables:
+
+- paging direction notes
+- minimal paging groundwork
+- explicit heap strategy decision
+- allocator work only if justified by the code
+
+Acceptance criteria:
+
+- paging direction is documented clearly
+- paging groundwork is introduced only as needed
+- heap support remains deferred unless justified by a concrete need
+
+### U6 — Unix-like Kernel Boundary
+
+Goal: make the Unix-like direction concrete through small kernel interfaces.
+
+Deliverables:
+
+- syscall boundary notes
+- task model sketch
+- descriptor or handle direction
+- VFS direction
+- clearer user and kernel boundary planning
+
+Acceptance criteria:
+
+- the Unix-like direction is reflected in small explicit kernel boundaries
+- syscall, task, and VFS direction are documented clearly
+- the implementation order remains realistic and educational
 
 ## Suggested Release Shape
 
