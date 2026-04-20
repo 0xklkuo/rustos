@@ -6,14 +6,29 @@
 
 use uefi::Status;
 
+/// Boot mode for the current kernel run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Mode {
+    /// Normal boot flow.
+    Normal,
+    /// Controlled exception test flow.
+    ExceptionTest,
+}
+
 /// Runs the early boot flow.
 ///
 /// The current flow:
 /// - initializes console output
 /// - prints deterministic boot messages
 /// - runs a small runtime initialization sequence
+/// - optionally runs a controlled exception test
 /// - returns success to UEFI
 pub fn run() -> Status {
+    run_with_mode(Mode::Normal)
+}
+
+/// Runs the early boot flow with an explicit boot mode.
+pub fn run_with_mode(mode: Mode) -> Status {
     let console_state = match crate::console::init() {
         Ok(state) => state,
         Err(status) => return status,
@@ -23,6 +38,10 @@ pub fn run() -> Status {
     crate::console::write_line(crate::HELLO_MESSAGE);
 
     initialize_runtime(console_state);
+
+    if mode == Mode::ExceptionTest {
+        run_exception_test();
+    }
 
     Status::SUCCESS
 }
@@ -85,4 +104,19 @@ fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::panic::init());
     crate::console::write_line(crate::IDLE_READY_MESSAGE);
     crate::console::write_line(crate::RUNTIME_INIT_COMPLETE_MESSAGE);
+}
+
+/// Runs the controlled exception test flow.
+///
+/// This function is intentionally small for the current milestone. It only
+/// reports the controlled exception path in plain language so the caller can
+/// switch into a dedicated exception-oriented boot mode without changing the
+/// normal boot sequence.
+fn run_exception_test() {
+    crate::console::write_line(crate::EXCEPTION_TEST_START_MESSAGE);
+    let exception = crate::interrupt::controlled_exception();
+    crate::console::write_line(crate::interrupt::controlled_exception_label(exception));
+    crate::interrupt::trigger_controlled_exception(exception);
+    crate::interrupt::report_controlled_exception(exception);
+    crate::console::write_line(crate::EXCEPTION_TEST_COMPLETE_MESSAGE);
 }

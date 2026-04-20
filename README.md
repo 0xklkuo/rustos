@@ -104,7 +104,8 @@ The current workflow is:
 3. `cargo run -p xtask -- lint`
 4. `cargo run -p xtask -- test-unit`
 5. `cargo run -p xtask -- test-qemu`
-6. `cargo run -p xtask -- run` when you want an interactive QEMU session
+6. `cargo run -p xtask -- test-exception`
+7. `cargo run -p xtask -- run` when you want an interactive QEMU session
 
 `test-unit` is intended to cover host-testable pure logic, which should increasingly live in `nucleus/` instead of the UEFI-facing `kernel/` crate.
 
@@ -132,6 +133,10 @@ Run a bounded QEMU boot test:
 
 - `cargo run -p xtask -- test-qemu`
 
+Run a bounded exception smoke test:
+
+- `cargo run -p xtask -- test-exception`
+
 Run the full local test flow:
 
 - `cargo run -p xtask -- test`
@@ -149,6 +154,7 @@ The current `xtask` commands are:
 - `lint` — runs `clippy` with warnings denied
 - `test-unit` — runs host-side unit tests for workspace crates, especially pure logic in `nucleus/`
 - `test-qemu` — launches QEMU in bounded test mode and exits automatically after success or timeout
+- `test-exception` — launches a bounded exception smoke test in QEMU
 - `test` — runs the unit-test flow first, then the bounded QEMU test
 - `run` — launches QEMU interactively for manual inspection
 
@@ -173,6 +179,7 @@ For automated validation, the project now uses a split test workflow:
 
 - `cargo run -p xtask -- test-unit`
 - `cargo run -p xtask -- test-qemu`
+- `cargo run -p xtask -- test-exception`
 
 Use:
 
@@ -228,6 +235,7 @@ This is a bootable foundation, not yet a full kernel runtime.
 - The direct QEMU workflow is preferred because it is simpler to understand and easier to debug than a wrapper-based runner.
 - The boot directory includes a `startup.nsh` script so the UEFI shell can launch `BOOTX64.EFI` automatically.
 - `test-qemu` is the preferred command for automated environments because it does not hang indefinitely.
+- `test-exception` should be used when validating the controlled exception path separately from the normal boot smoke test.
 - `test-unit` is intended for fast host-side feedback before running emulator-based validation.
 - Host-testable pure logic should prefer `nucleus/`, while firmware-facing runtime code should remain in `kernel/`.
 - More detailed boot and debugging guidance can be added once the run path is stable across environments.
@@ -255,6 +263,10 @@ Before opening a pull request, run:
 If your change affects boot behavior or the QEMU workflow, also run:
 
 - `cargo run -p xtask -- test-qemu`
+
+If your change affects the controlled exception path, also run:
+
+- `cargo run -p xtask -- test-exception`
 
 If you want the standard combined local validation flow, run:
 

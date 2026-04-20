@@ -37,6 +37,15 @@ pub const EXCEPTION_INIT_PENDING_MESSAGE: &str = "rustos: exception init pending
 /// Runtime log message printed after exception groundwork completes.
 pub const EXCEPTION_INIT_COMPLETE_MESSAGE: &str = "rustos: exception init complete";
 
+/// Runtime log message printed before a controlled exception test begins.
+pub const EXCEPTION_TEST_START_MESSAGE: &str = "rustos: exception test start";
+
+/// Runtime log message printed when a controlled breakpoint test is requested.
+pub const BREAKPOINT_TEST_MESSAGE: &str = "rustos: breakpoint test";
+
+/// Runtime log message printed after a controlled exception test completes.
+pub const EXCEPTION_TEST_COMPLETE_MESSAGE: &str = "rustos: exception test complete";
+
 /// Runtime log message printed before interrupt groundwork begins.
 pub const INTERRUPT_INIT_MESSAGE: &str = "rustos: interrupt init";
 

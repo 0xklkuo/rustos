@@ -303,6 +303,8 @@ Acceptance criteria:
 
 ### U3 — Controlled Exception Path
 
+Status: in progress
+
 Goal: introduce the first narrow, testable exception path.
 
 Deliverables:
@@ -312,9 +314,16 @@ Deliverables:
 - explicit success and failure reporting
 - clearer direction for later double-fault handling
 
+Current implementation status:
+
+- the project now has explicit exception groundwork and host-testable interrupt state in `nucleus`
+- the next U3 step is to replace the current placeholder exception test flow with a real breakpoint-first exception path
+- the exception path should produce a clear success marker in bounded QEMU output
+- double-fault handling should remain deferred until the first controlled exception path is stable and easy to validate
+
 Acceptance criteria:
 
-- one exception path is implemented and visible
+- one real exception path is implemented and visible
 - the exception path is validated through bounded QEMU testing
 - the implementation remains narrow and easy to reason about
 

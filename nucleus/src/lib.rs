@@ -204,6 +204,7 @@ pub mod interrupt {
     pub struct ExceptionState {
         breakpoint_ready: bool,
         double_fault_ready: bool,
+        controlled_breakpoint_ready: bool,
     }
 
     impl ExceptionState {
@@ -213,6 +214,7 @@ pub mod interrupt {
             Self {
                 breakpoint_ready: false,
                 double_fault_ready: false,
+                controlled_breakpoint_ready: false,
             }
         }
 
@@ -222,6 +224,18 @@ pub mod interrupt {
             Self {
                 breakpoint_ready: true,
                 double_fault_ready: true,
+                controlled_breakpoint_ready: false,
+            }
+        }
+
+        /// Creates an exception state with the current minimal handlers prepared
+        /// and a controlled breakpoint path enabled.
+        #[must_use]
+        pub const fn controlled_breakpoint_ready() -> Self {
+            Self {
+                breakpoint_ready: true,
+                double_fault_ready: true,
+                controlled_breakpoint_ready: true,
             }
         }
 
@@ -235,6 +249,12 @@ pub mod interrupt {
         #[must_use]
         pub const fn is_double_fault_ready(self) -> bool {
             self.double_fault_ready
+        }
+
+        /// Returns whether the controlled breakpoint path is ready.
+        #[must_use]
+        pub const fn is_controlled_breakpoint_ready(self) -> bool {
+            self.controlled_breakpoint_ready
         }
     }
 
@@ -315,6 +335,16 @@ pub mod interrupt {
             }
         }
 
+        /// Creates an interrupt subsystem state with the current minimal groundwork
+        /// prepared and a controlled breakpoint path enabled.
+        #[must_use]
+        pub const fn controlled_breakpoint_ready() -> Self {
+            Self {
+                exceptions: ExceptionState::controlled_breakpoint_ready(),
+                interrupts: InterruptState::ready(),
+            }
+        }
+
         /// Returns the current exception handling state.
         #[must_use]
         pub const fn exceptions(self) -> ExceptionState {
@@ -340,10 +370,19 @@ pub mod interrupt {
         State::ready()
     }
 
+    /// Performs the current minimal exception and interrupt initialization step
+    /// with a controlled breakpoint path enabled.
+    #[must_use]
+    pub const fn init_controlled_breakpoint() -> State {
+        State::controlled_breakpoint_ready()
+    }
+
     /// Returns a small plain-language summary of the current exception state.
     #[must_use]
     pub const fn exception_summary(state: ExceptionState) -> &'static str {
-        if state.is_breakpoint_ready() && state.is_double_fault_ready() {
+        if state.is_controlled_breakpoint_ready() {
+            "controlled breakpoint path ready"
+        } else if state.is_breakpoint_ready() && state.is_double_fault_ready() {
             "exception groundwork ready"
         } else if state.is_breakpoint_ready() {
             "breakpoint groundwork ready"
@@ -371,7 +410,13 @@ pub mod interrupt {
     /// Returns a small plain-language summary of the current interrupt subsystem state.
     #[must_use]
     pub const fn state_summary(state: State) -> &'static str {
-        if state.exceptions().is_breakpoint_ready()
+        if state.exceptions().is_controlled_breakpoint_ready()
+            && state.exceptions().is_breakpoint_ready()
+            && state.exceptions().is_double_fault_ready()
+            && state.interrupts().is_timer_ready()
+        {
+            "interrupt foundation ready with controlled breakpoint"
+        } else if state.exceptions().is_breakpoint_ready()
             && state.exceptions().is_double_fault_ready()
             && state.interrupts().is_timer_ready()
         {
@@ -390,8 +435,8 @@ pub mod interrupt {
     #[cfg(test)]
     mod tests {
         use super::{
-            ExceptionState, InterruptState, State, exception_summary, init, interrupt_summary,
-            state_summary,
+            ExceptionState, InterruptState, State, exception_summary, init,
+            init_controlled_breakpoint, interrupt_summary, state_summary,
         };
 
         #[test]
@@ -400,6 +445,7 @@ pub mod interrupt {
 
             assert!(!state.is_breakpoint_ready());
             assert!(!state.is_double_fault_ready());
+            assert!(!state.is_controlled_breakpoint_ready());
             assert_eq!(
                 exception_summary(state),
                 "exception groundwork not initialized"
@@ -412,7 +458,18 @@ pub mod interrupt {
 
             assert!(state.is_breakpoint_ready());
             assert!(state.is_double_fault_ready());
+            assert!(!state.is_controlled_breakpoint_ready());
             assert_eq!(exception_summary(state), "exception groundwork ready");
+        }
+
+        #[test]
+        fn controlled_breakpoint_exception_state_reports_ready() {
+            let state = ExceptionState::controlled_breakpoint_ready();
+
+            assert!(state.is_breakpoint_ready());
+            assert!(state.is_double_fault_ready());
+            assert!(state.is_controlled_breakpoint_ready());
+            assert_eq!(exception_summary(state), "controlled breakpoint path ready");
         }
 
         #[test]
@@ -442,6 +499,17 @@ pub mod interrupt {
 
             assert_eq!(state, State::ready());
             assert_eq!(state_summary(state), "interrupt foundation ready");
+        }
+
+        #[test]
+        fn controlled_breakpoint_init_reports_ready_interrupt_foundation() {
+            let state = init_controlled_breakpoint();
+
+            assert_eq!(state, State::controlled_breakpoint_ready());
+            assert_eq!(
+                state_summary(state),
+                "interrupt foundation ready with controlled breakpoint"
+            );
         }
 
         #[test]

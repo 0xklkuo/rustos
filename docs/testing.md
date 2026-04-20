@@ -38,6 +38,9 @@ As exception and interrupt groundwork is introduced, emulator tests should stay 
 - clear success markers in output
 - bounded execution with explicit timeout behavior
 
+For the controlled exception path stage, prefer one deliberate and well-bounded exception first.
+The recommended first exception is a breakpoint-style path because it is easier to trigger intentionally, easier to explain, and less risky than more destructive exception cases.
+
 ### 3. Keep tests bounded
 
 Automated test runs must not hang indefinitely.
@@ -122,6 +125,11 @@ For exception and interrupt groundwork, prefer smoke tests that answer one quest
 - does the expected interrupt initialization path run?
 - does the expected success marker appear before timeout?
 
+For the controlled exception path stage, the exception smoke test should answer an even narrower question:
+- can the kernel trigger one deliberate exception safely?
+- does the expected exception log appear?
+- does the system remain bounded and diagnosable?
+
 Avoid combining many low-level behaviors into one emulator test.
 
 ### Layer 4 — Negative-path emulator tests
@@ -140,6 +148,9 @@ For exception and interrupt work, add negative-path tests gradually:
 - start with a breakpoint or other controlled exception smoke test
 - add double-fault validation only after the basic exception path is stable
 - add interrupt-specific negative tests only when the interrupt subsystem has a clear success path and failure model
+
+The controlled exception path should be treated as a bridge between basic runtime logging and more advanced exception handling work.
+It should stay small enough that a failure points to one subsystem first.
 
 ## What to Test First
 
@@ -256,6 +267,11 @@ For exception and interrupt groundwork, add a QEMU test only when:
 - the test can be bounded reliably
 - the behavior is narrow enough that a failure points to one subsystem first
 
+For the controlled exception path stage, the preferred success marker should be a plain-language exception log that clearly distinguishes:
+- exception trigger start
+- exception handler reached
+- exception handling complete or expected stop condition
+
 ## What to Avoid
 
 Avoid:
@@ -291,7 +307,7 @@ The testing strategy is working if:
 - add memory bookkeeping tests
 - add syscall and task model tests when those subsystems exist
 
-### Exception and interrupt test rollout
+### Controlled exception path rollout
 A practical rollout order is:
 1. boot smoke test
 2. runtime initialization smoke test

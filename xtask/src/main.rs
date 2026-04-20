@@ -15,6 +15,7 @@ const STARTUP_SCRIPT_PATH: &str = "startup.nsh";
 const DEFAULT_MEMORY_MB: &str = "256M";
 const DEFAULT_TEST_TIMEOUT_SECS: u64 = 10;
 const SUCCESS_MARKER: &str = "rustos: hello from UEFI";
+const EXCEPTION_SUCCESS_MARKER: &str = "rustos: breakpoint handler reached";
 
 fn main() {
     let mut args = env::args_os();
@@ -32,6 +33,7 @@ fn main() {
         "lint" => cmd_lint(),
         "run" => cmd_run(args.collect(), false),
         "test" => cmd_test(args.collect()),
+        "test-exception" => cmd_test_exception(),
         "test-qemu" => cmd_run(args.collect(), true),
         "test-unit" => cmd_test_unit(),
         "help" | "--help" | "-h" => {
@@ -101,10 +103,42 @@ fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), Str
     let firmware_vars = prepare_firmware_vars(&artifacts_dir)?;
 
     if bounded_test_mode {
-        run_qemu_bounded(&firmware_code, &firmware_vars, &image_dir, extra_args)
+        run_qemu_bounded(
+            &firmware_code,
+            &firmware_vars,
+            &image_dir,
+            extra_args,
+            SUCCESS_MARKER,
+        )
     } else {
         run_qemu(&firmware_code, &firmware_vars, &image_dir, extra_args)
     }
+}
+
+fn cmd_run_with_marker(
+    extra_args: Vec<OsString>,
+    success_marker: &'static str,
+) -> Result<(), String> {
+    ensure_command_available("qemu-system-x86_64")?;
+
+    let kernel_efi = build_efi()?;
+    let workspace_root = workspace_root()?;
+    let artifacts_dir = workspace_root.join("artifacts");
+    let image_dir = artifacts_dir.join("efi-root");
+    recreate_directory(&image_dir)?;
+    install_boot_file(&kernel_efi, &image_dir)?;
+    install_startup_script(&image_dir)?;
+
+    let firmware_code = find_firmware_code()?;
+    let firmware_vars = prepare_firmware_vars(&artifacts_dir)?;
+
+    run_qemu_bounded(
+        &firmware_code,
+        &firmware_vars,
+        &image_dir,
+        extra_args,
+        success_marker,
+    )
 }
 
 fn cmd_test(extra_args: Vec<OsString>) -> Result<(), String> {
@@ -117,6 +151,11 @@ fn cmd_test_unit() -> Result<(), String> {
         "cargo",
         ["test", "--workspace", "--exclude", KERNEL_PACKAGE],
     )
+}
+
+fn cmd_test_exception() -> Result<(), String> {
+    let extra_args = vec![OsString::from("-no-reboot")];
+    cmd_run_with_marker(extra_args, EXCEPTION_SUCCESS_MARKER)
 }
 
 fn build_efi() -> Result<PathBuf, String> {
@@ -295,6 +334,7 @@ fn run_qemu_bounded(
     firmware_vars: &Path,
     image_dir: &Path,
     extra_args: Vec<OsString>,
+    success_marker: &'static str,
 ) -> Result<(), String> {
     let timeout = env::var("RUSTOS_QEMU_TIMEOUT_SECS")
         .ok()
@@ -338,7 +378,7 @@ fn run_qemu_bounded(
             print!("{stdout_output}");
             eprint!("{stderr_output}");
 
-            if stdout_output.contains(SUCCESS_MARKER) || stderr_output.contains(SUCCESS_MARKER) {
+            if stdout_output.contains(success_marker) || stderr_output.contains(success_marker) {
                 return Ok(());
             }
 
@@ -367,7 +407,7 @@ fn run_qemu_bounded(
             print!("{stdout_output}");
             eprint!("{stderr_output}");
 
-            if stdout_output.contains(SUCCESS_MARKER) || stderr_output.contains(SUCCESS_MARKER) {
+            if stdout_output.contains(success_marker) || stderr_output.contains(success_marker) {
                 return Ok(());
             }
 
@@ -504,10 +544,11 @@ fn print_help() {
     eprintln!("  ci         run the CI-friendly local validation sequence");
     eprintln!("  fmt        check formatting with rustfmt");
     eprintln!("  lint       run clippy with warnings denied");
-    eprintln!("  run        build the UEFI binary and launch it with qemu");
-    eprintln!("  test       run unit tests, then run qemu in bounded test mode");
-    eprintln!("  test-qemu  run qemu in bounded test mode and exit automatically");
-    eprintln!("  test-unit  run host-side unit tests for workspace crates");
+    eprintln!("  run             build the UEFI binary and launch it with qemu");
+    eprintln!("  test            run unit tests, then run qemu in bounded test mode");
+    eprintln!("  test-exception  run a bounded exception smoke test command");
+    eprintln!("  test-qemu       run qemu in bounded test mode and exit automatically");
+    eprintln!("  test-unit       run host-side unit tests for workspace crates");
     eprintln!();
     eprintln!("run requirements:");
     eprintln!("  - qemu-system-x86_64 must be installed");
