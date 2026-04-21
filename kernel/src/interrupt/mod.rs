@@ -38,11 +38,27 @@ pub const fn controlled_exception_ready(state: State, exception: ControlledExcep
     }
 }
 
-/// Returns the success marker expected after the controlled exception path runs.
+/// Returns the current scaffold stage label for the controlled exception path.
+///
+/// This label makes it explicit that the current milestone still uses a
+/// scaffolded reporting path instead of a real handler-originated success
+/// marker.
+#[must_use]
+pub const fn controlled_exception_stage_label(exception: ControlledException) -> &'static str {
+    match exception {
+        ControlledException::Breakpoint => "rustos: breakpoint scaffold active",
+    }
+}
+
+/// Returns the current scaffold success marker for the controlled exception path.
+///
+/// This marker confirms that the explicit exception-test flow reached the
+/// reporting step. It does not yet prove that a real hardware exception
+/// handler ran.
 #[must_use]
 pub const fn controlled_exception_success_marker(exception: ControlledException) -> &'static str {
     match exception {
-        ControlledException::Breakpoint => "rustos: breakpoint handler reached",
+        ControlledException::Breakpoint => "rustos: breakpoint scaffold reached",
     }
 }
 
@@ -67,16 +83,26 @@ pub fn trigger_controlled_exception(exception: ControlledException) {
     }
 }
 
-/// Reports the controlled exception handler marker for the current milestone.
+/// Reports the controlled exception scaffold marker for the current milestone.
 ///
-/// This keeps the first exception path explicit and easy to validate before a
-/// fuller exception handler framework exists.
+/// This keeps the first exception path explicit and easy to validate while the
+/// real handler path is still deferred. The emitted marker is intentionally
+/// named as a scaffold marker so logs do not overclaim implementation status.
 pub fn report_controlled_exception(exception: ControlledException) {
     match exception {
         ControlledException::Breakpoint => {
             crate::console::write_line(controlled_exception_success_marker(exception));
         }
     }
+}
+
+/// Returns whether the kernel has installed real exception handlers yet.
+///
+/// For the current milestone, the controlled exception path is still
+/// scaffolded, so this remains `false`.
+#[must_use]
+pub const fn has_real_exception_handlers() -> bool {
+    false
 }
 
 /// Returns whether the current interrupt groundwork is ready enough for the
@@ -96,7 +122,8 @@ pub const fn is_ready(state: State) -> bool {
 mod tests {
     use super::{
         ControlledException, State, controlled_exception, controlled_exception_label,
-        controlled_exception_ready, controlled_exception_success_marker, exception_summary, init,
+        controlled_exception_ready, controlled_exception_stage_label,
+        controlled_exception_success_marker, exception_summary, has_real_exception_handlers, init,
         interrupt_summary, is_ready, state_summary,
     };
 
@@ -128,11 +155,24 @@ mod tests {
     }
 
     #[test]
+    fn controlled_exception_stage_label_matches_breakpoint() {
+        assert_eq!(
+            controlled_exception_stage_label(ControlledException::Breakpoint),
+            "rustos: breakpoint scaffold active"
+        );
+    }
+
+    #[test]
     fn controlled_exception_success_marker_matches_breakpoint() {
         assert_eq!(
             controlled_exception_success_marker(ControlledException::Breakpoint),
-            "rustos: breakpoint handler reached"
+            "rustos: breakpoint scaffold reached"
         );
+    }
+
+    #[test]
+    fn real_exception_handlers_are_not_installed_yet() {
+        assert!(!has_real_exception_handlers());
     }
 
     #[test]

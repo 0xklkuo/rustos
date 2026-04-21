@@ -15,7 +15,9 @@ const STARTUP_SCRIPT_PATH: &str = "startup.nsh";
 const DEFAULT_MEMORY_MB: &str = "256M";
 const DEFAULT_TEST_TIMEOUT_SECS: u64 = 10;
 const SUCCESS_MARKER: &str = "rustos: hello from UEFI";
-const EXCEPTION_SUCCESS_MARKER: &str = "rustos: breakpoint handler reached";
+const EXCEPTION_SUCCESS_MARKER: &str = "rustos: breakpoint scaffold reached";
+const NORMAL_STARTUP_SCRIPT: &str = "fs0:\r\nEFI\\BOOT\\BOOTX64.EFI\r\n";
+const EXCEPTION_TEST_STARTUP_SCRIPT: &str = "fs0:\r\nEFI\\BOOT\\BOOTX64.EFI exception-test\r\n";
 
 fn main() {
     let mut args = env::args_os();
@@ -97,7 +99,7 @@ fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), Str
     let image_dir = artifacts_dir.join("efi-root");
     recreate_directory(&image_dir)?;
     install_boot_file(&kernel_efi, &image_dir)?;
-    install_startup_script(&image_dir)?;
+    install_startup_script(&image_dir, NORMAL_STARTUP_SCRIPT)?;
 
     let firmware_code = find_firmware_code()?;
     let firmware_vars = prepare_firmware_vars(&artifacts_dir)?;
@@ -118,6 +120,7 @@ fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), Str
 fn cmd_run_with_marker(
     extra_args: Vec<OsString>,
     success_marker: &'static str,
+    startup_script: &str,
 ) -> Result<(), String> {
     ensure_command_available("qemu-system-x86_64")?;
 
@@ -127,7 +130,7 @@ fn cmd_run_with_marker(
     let image_dir = artifacts_dir.join("efi-root");
     recreate_directory(&image_dir)?;
     install_boot_file(&kernel_efi, &image_dir)?;
-    install_startup_script(&image_dir)?;
+    install_startup_script(&image_dir, startup_script)?;
 
     let firmware_code = find_firmware_code()?;
     let firmware_vars = prepare_firmware_vars(&artifacts_dir)?;
@@ -155,7 +158,11 @@ fn cmd_test_unit() -> Result<(), String> {
 
 fn cmd_test_exception() -> Result<(), String> {
     let extra_args = vec![OsString::from("-no-reboot")];
-    cmd_run_with_marker(extra_args, EXCEPTION_SUCCESS_MARKER)
+    cmd_run_with_marker(
+        extra_args,
+        EXCEPTION_SUCCESS_MARKER,
+        EXCEPTION_TEST_STARTUP_SCRIPT,
+    )
 }
 
 fn build_efi() -> Result<PathBuf, String> {
@@ -210,9 +217,8 @@ fn install_boot_file(kernel_efi: &Path, image_dir: &Path) -> Result<(), String> 
     Ok(())
 }
 
-fn install_startup_script(image_dir: &Path) -> Result<(), String> {
+fn install_startup_script(image_dir: &Path, script_contents: &str) -> Result<(), String> {
     let startup_script = image_dir.join(STARTUP_SCRIPT_PATH);
-    let script_contents = "fs0:\r\nEFI\\BOOT\\BOOTX64.EFI\r\n";
 
     fs::write(&startup_script, script_contents).map_err(|error| {
         format!(

@@ -57,7 +57,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone U1 — testing foundation and `blog_os` adoption plan
+- Milestone U2 — exception and interrupt groundwork
 
 ## Roadmap
 
@@ -107,6 +107,8 @@ The current workflow is:
 6. `cargo run -p xtask -- test-exception`
 7. `cargo run -p xtask -- run` when you want an interactive QEMU session
 
+`test-exception` is intended to boot the kernel in an explicit exception-test mode. At the current stage, this validates the dedicated exception-test boot path and controlled exception scaffold. It does not yet prove that a real hardware exception handler is installed.
+
 `test-unit` is intended to cover host-testable pure logic, which should increasingly live in `nucleus/` instead of the UEFI-facing `kernel/` crate.
 
 This keeps local development and CI aligned around the same commands.
@@ -154,7 +156,7 @@ The current `xtask` commands are:
 - `lint` — runs `clippy` with warnings denied
 - `test-unit` — runs host-side unit tests for workspace crates, especially pure logic in `nucleus/`
 - `test-qemu` — launches QEMU in bounded test mode and exits automatically after success or timeout
-- `test-exception` — launches a bounded exception smoke test in QEMU
+- `test-exception` — launches a bounded exception smoke test in QEMU using an explicit exception-test boot mode
 - `test` — runs the unit-test flow first, then the bounded QEMU test
 - `run` — launches QEMU interactively for manual inspection
 
@@ -236,6 +238,8 @@ This is a bootable foundation, not yet a full kernel runtime.
 - The boot directory includes a `startup.nsh` script so the UEFI shell can launch `BOOTX64.EFI` automatically.
 - `test-qemu` is the preferred command for automated environments because it does not hang indefinitely.
 - `test-exception` should be used when validating the controlled exception path separately from the normal boot smoke test.
+- the exception smoke test currently validates explicit exception-mode boot selection and controlled exception scaffolding.
+- a later milestone will replace the scaffold marker with a real handler-originated success marker.
 - `test-unit` is intended for fast host-side feedback before running emulator-based validation.
 - Host-testable pure logic should prefer `nucleus/`, while firmware-facing runtime code should remain in `kernel/`.
 - More detailed boot and debugging guidance can be added once the run path is stable across environments.

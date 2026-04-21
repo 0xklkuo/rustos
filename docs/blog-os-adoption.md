@@ -139,6 +139,9 @@ Because of that, `blog_os` material should be filtered through these project rul
 - Notes:
   - implement only the smallest useful exception groundwork first
   - keep logs and failure behavior explicit
+  - treat modeled exception readiness and installed exception handlers as different milestones
+  - complete boot-mode selection for exception testing before claiming a real controlled exception path
+  - consider the first exception milestone complete only when the success marker is emitted by the real handler path
 
 ### Double Faults
 - Category: **Adapt**
@@ -149,6 +152,7 @@ Because of that, `blog_os` material should be filtered through these project rul
   - adopt the concept carefully
   - keep the implementation minimal and well-tested
   - do not introduce large exception infrastructure before the basic exception path is clear
+  - defer double-fault completion claims until the first controlled breakpoint path is real, bounded, and easy to diagnose
 
 ### Hardware Interrupts
 - Category: **Adopt**
@@ -241,6 +245,8 @@ When using `blog_os` as a reference:
 5. Add tests whenever logic can be tested without emulation.
 6. Use emulator tests only for behavior that truly requires runtime validation.
 7. Document why a `blog_os` idea was adopted, adapted, or deferred if the choice is not obvious.
+8. Do not treat a post-trigger log message as proof of a real exception handler path.
+9. For exception milestones, require explicit boot-mode selection, real handler installation, and handler-originated success markers before marking the milestone complete.
 
 ## Testing Guidance from `blog_os`
 

@@ -16,6 +16,12 @@ pub mod panic;
 /// Deterministic boot message printed during early startup.
 pub const BOOT_MESSAGE: &str = "rustos: boot start";
 
+/// Boot mode marker used for the normal boot flow.
+pub const BOOT_MODE_NORMAL: &str = "rustos: boot mode normal";
+
+/// Boot mode marker used for the controlled exception test flow.
+pub const BOOT_MODE_EXCEPTION_TEST: &str = "rustos: boot mode exception-test";
+
 /// Runtime log message printed when runtime initialization begins.
 pub const RUNTIME_INIT_START_MESSAGE: &str = "rustos: runtime init start";
 
@@ -34,8 +40,11 @@ pub const EXCEPTION_INIT_MESSAGE: &str = "rustos: exception init";
 /// Runtime log message printed while exception groundwork is still pending.
 pub const EXCEPTION_INIT_PENDING_MESSAGE: &str = "rustos: exception init pending";
 
-/// Runtime log message printed after exception groundwork completes.
-pub const EXCEPTION_INIT_COMPLETE_MESSAGE: &str = "rustos: exception init complete";
+/// Runtime log message printed after modeled exception groundwork completes.
+pub const EXCEPTION_INIT_COMPLETE_MESSAGE: &str = "rustos: exception groundwork modeled";
+
+/// Runtime log message printed when real exception handlers are installed.
+pub const EXCEPTION_HANDLERS_INSTALLED_MESSAGE: &str = "rustos: exception handlers installed";
 
 /// Runtime log message printed before a controlled exception test begins.
 pub const EXCEPTION_TEST_START_MESSAGE: &str = "rustos: exception test start";
@@ -52,8 +61,8 @@ pub const INTERRUPT_INIT_MESSAGE: &str = "rustos: interrupt init";
 /// Runtime log message printed while interrupt groundwork is still pending.
 pub const INTERRUPT_INIT_PENDING_MESSAGE: &str = "rustos: interrupt init pending";
 
-/// Runtime log message printed after interrupt groundwork completes.
-pub const INTERRUPT_INIT_COMPLETE_MESSAGE: &str = "rustos: interrupt init complete";
+/// Runtime log message printed after modeled interrupt groundwork completes.
+pub const INTERRUPT_INIT_COMPLETE_MESSAGE: &str = "rustos: interrupt groundwork modeled";
 
 /// Runtime log message printed before timer groundwork begins.
 pub const TIMER_INIT_MESSAGE: &str = "rustos: timer init";
@@ -61,8 +70,8 @@ pub const TIMER_INIT_MESSAGE: &str = "rustos: timer init";
 /// Runtime log message printed while timer groundwork is still pending.
 pub const TIMER_INIT_PENDING_MESSAGE: &str = "rustos: timer init pending";
 
-/// Runtime log message printed after timer groundwork completes.
-pub const TIMER_INIT_COMPLETE_MESSAGE: &str = "rustos: timer init complete";
+/// Runtime log message printed after modeled timer groundwork completes.
+pub const TIMER_INIT_COMPLETE_MESSAGE: &str = "rustos: timer groundwork modeled";
 
 /// Runtime log message printed before memory groundwork begins.
 pub const MEMORY_INIT_MESSAGE: &str = "rustos: memory init";

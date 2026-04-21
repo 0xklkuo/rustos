@@ -41,6 +41,10 @@ As exception and interrupt groundwork is introduced, emulator tests should stay 
 For the controlled exception path stage, prefer one deliberate and well-bounded exception first.
 The recommended first exception is a breakpoint-style path because it is easier to trigger intentionally, easier to explain, and less risky than more destructive exception cases.
 
+During the current scaffolded stage, the exception smoke test should boot the kernel in an explicit exception-test mode instead of assuming the normal boot path will trigger exception behavior automatically.
+
+Until a real exception handler is installed, any exception-path success marker should be treated as a scaffold marker, not proof that a hardware exception handler ran.
+
 ### 3. Keep tests bounded
 
 Automated test runs must not hang indefinitely.
@@ -126,9 +130,12 @@ For exception and interrupt groundwork, prefer smoke tests that answer one quest
 - does the expected success marker appear before timeout?
 
 For the controlled exception path stage, the exception smoke test should answer an even narrower question:
+- does the kernel enter an explicit exception-test boot mode?
 - can the kernel trigger one deliberate exception safely?
 - does the expected exception log appear?
 - does the system remain bounded and diagnosable?
+
+Until the first real handler is installed, phrase this test as validation of the exception-test boot path and controlled exception scaffold, not as proof of full exception-handler correctness.
 
 Avoid combining many low-level behaviors into one emulator test.
 
@@ -268,9 +275,12 @@ For exception and interrupt groundwork, add a QEMU test only when:
 - the behavior is narrow enough that a failure points to one subsystem first
 
 For the controlled exception path stage, the preferred success marker should be a plain-language exception log that clearly distinguishes:
+- exception-test boot mode entered
 - exception trigger start
-- exception handler reached
+- scaffold marker or real handler marker reached
 - exception handling complete or expected stop condition
+
+When the implementation is still scaffolded, the logs should say so plainly. Once a real handler exists, the success marker should come from the handler path itself.
 
 ## What to Avoid
 
@@ -300,6 +310,8 @@ The testing strategy is working if:
 - split local test workflow into unit and QEMU commands
 - align CI with the same split
 - extract host-testable pure logic into a small crate such as `nucleus`
+- make exception-test boot mode explicit in the kernel and test workflow
+- keep exception-path documentation honest while the handler path is still scaffolded
 
 ### Later steps
 - add exception smoke tests

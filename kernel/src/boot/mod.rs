@@ -36,6 +36,7 @@ pub fn run_with_mode(mode: Mode) -> Status {
 
     crate::console::write_line(crate::BOOT_MESSAGE);
     crate::console::write_line(crate::HELLO_MESSAGE);
+    crate::console::write_line(boot_mode_label(mode));
 
     initialize_runtime(console_state);
 
@@ -75,6 +76,10 @@ fn initialize_runtime(console_state: crate::console::State) {
         crate::console::write_line(crate::EXCEPTION_INIT_PENDING_MESSAGE);
     }
 
+    if crate::interrupt::has_real_exception_handlers() {
+        crate::console::write_line(crate::EXCEPTION_HANDLERS_INSTALLED_MESSAGE);
+    }
+
     crate::console::write_line(crate::INTERRUPT_INIT_MESSAGE);
     crate::console::write_line(crate::interrupt::interrupt_summary(
         interrupt_state.interrupts(),
@@ -106,16 +111,26 @@ fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::RUNTIME_INIT_COMPLETE_MESSAGE);
 }
 
+/// Returns the plain-language label for the selected boot mode.
+const fn boot_mode_label(mode: Mode) -> &'static str {
+    match mode {
+        Mode::Normal => crate::BOOT_MODE_NORMAL,
+        Mode::ExceptionTest => crate::BOOT_MODE_EXCEPTION_TEST,
+    }
+}
+
 /// Runs the controlled exception test flow.
 ///
-/// This function is intentionally small for the current milestone. It only
-/// reports the controlled exception path in plain language so the caller can
-/// switch into a dedicated exception-oriented boot mode without changing the
-/// normal boot sequence.
+/// This function is intentionally small for the current milestone. It reports
+/// the current controlled exception path honestly so contributors can see
+/// whether the kernel is still exercising a scaffolded path or a real handler.
 fn run_exception_test() {
     crate::console::write_line(crate::EXCEPTION_TEST_START_MESSAGE);
     let exception = crate::interrupt::controlled_exception();
     crate::console::write_line(crate::interrupt::controlled_exception_label(exception));
+    crate::console::write_line(crate::interrupt::controlled_exception_stage_label(
+        exception,
+    ));
     crate::interrupt::trigger_controlled_exception(exception);
     crate::interrupt::report_controlled_exception(exception);
     crate::console::write_line(crate::EXCEPTION_TEST_COMPLETE_MESSAGE);

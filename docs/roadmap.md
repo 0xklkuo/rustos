@@ -69,6 +69,13 @@ Deliverables:
 - issue and pull request templates
 - placeholder `kernel` and `xtask` crates
 
+Current implementation status:
+
+- the Cargo workspace, toolchain definition, README, license, contribution guide, architecture note, roadmap, and issue templates are present
+- the repository structure is clear and contributor-facing project scope is documented
+- the workspace builds for host-side tooling
+- this milestone is effectively complete for the current project stage
+
 Acceptance criteria:
 
 - the repository structure is clear
@@ -96,8 +103,8 @@ Current implementation status:
 - deterministic boot output is implemented
 - `xtask` commands now cover `check`, `fmt`, `lint`, and `run`
 - CI now includes a UEFI target build step
-- the run workflow is being simplified to use direct QEMU invocation
-- runner-specific firmware assumptions are being removed from the local workflow
+- the direct QEMU workflow is implemented and documented
+- this milestone is effectively complete for the current project stage
 
 Acceptance criteria:
 
@@ -121,11 +128,12 @@ Deliverables:
 
 Current implementation status:
 
-- `xtask` already provides `check`, `fmt`, `lint`, and `run`
-- the local workflow now uses direct QEMU execution instead of a wrapper tool
-- CI already validates workspace checks, formatting, clippy, and the UEFI target build
+- `xtask` already provides `check`, `fmt`, `lint`, `run`, `test-unit`, `test-qemu`, `test-exception`, and `test`
+- the local workflow uses direct QEMU execution instead of a wrapper tool
+- CI already validates workspace checks, formatting, clippy, unit tests, and the bounded QEMU boot smoke test
 - contributor-facing templates and baseline guidance are already present
-- the next Milestone 2 work should focus on aligning CI and documentation around the `xtask` workflow
+- the remaining gap is to add separate CI coverage for the exception smoke test once the controlled exception path is real
+- this milestone is effectively complete for the current project stage, with the exception-path CI follow-up intentionally deferred
 
 Acceptance criteria:
 
@@ -150,9 +158,10 @@ Deliverables:
 
 Current implementation status:
 
-- the kernel still uses a single-file entry path and is ready for a structural refactor
-- the next Milestone 3 step is to introduce `arch`, `boot`, `console`, `panic`, and `memory` modules without changing boot behavior
-- the existing `xtask` workflow and bounded QEMU test provide a safe validation path for this refactor
+- the kernel now has explicit `arch`, `boot`, `console`, `interrupt`, `panic`, and `memory` modules
+- the current structure keeps firmware-facing code small while allowing host-testable logic to live in `nucleus`
+- the existing `xtask` workflow and bounded QEMU test provide a safe validation path for further structural refinement
+- this milestone is effectively complete for the current project stage
 
 Acceptance criteria:
 
@@ -176,7 +185,9 @@ Current implementation status:
 - the kernel now has a minimal module layout that can support runtime initialization growth
 - the boot flow now exposes a small explicit initialization sequence for architecture, interrupts, timer, memory, panic, and idle behavior
 - boot logs now show initialization order without changing the current boot success path
-- interrupt and timer support currently remain placeholders or skeletons, not a full subsystem
+- interrupt and timer support currently remain modeled groundwork and placeholders, not a full subsystem
+- exception, interrupt, and timer readiness logs currently describe modeled groundwork, not installed low-level handlers
+- this milestone is partially complete and intentionally remains below full hardware-real runtime setup
 
 Acceptance criteria:
 
@@ -186,7 +197,7 @@ Acceptance criteria:
 
 ### Milestone 5 — Memory Management Foundation
 
-Status: in progress
+Status: scaffolded
 
 Goal: introduce the smallest useful memory subsystem.
 
@@ -199,8 +210,9 @@ Deliverables:
 
 Current implementation status:
 
-- the current memory module already exposes a small initialization state and is ready to grow into a clearer subsystem boundary
-- the next Milestone 5 step is to introduce a minimal memory map model and a frame allocator skeleton without claiming full paging or heap support
+- the current memory module exposes a small initialization state and a frame allocator skeleton through host-testable logic in `nucleus`
+- the current implementation does not yet use real discovered memory information from UEFI
+- the next Milestone 5 step is to introduce a minimal memory map model and connect the frame allocator direction to real discovered memory without claiming full paging or heap support
 - memory-related boot output should stay explicit and plain-language so contributors can see what is initialized and what is still deferred
 - allocator work should remain a documented decision first, and only become code if it is clearly needed by the next milestone
 
@@ -212,7 +224,7 @@ Acceptance criteria:
 
 ### Milestone 6 — Unix-like Direction Definition
 
-Status: in progress
+Status: documentation-complete
 
 Goal: define the first Unix-like boundaries without pretending to be complete.
 
@@ -273,7 +285,7 @@ Acceptance criteria:
 
 ### U2 — Exception and Interrupt Groundwork
 
-Status: in progress
+Status: partially complete
 
 Goal: introduce the smallest useful exception and interrupt foundation aligned with the current minimal kernel direction.
 
@@ -292,6 +304,7 @@ Current implementation status:
 - the boot flow now reports exception and interrupt initialization separately in plain language
 - exception and interrupt work still stays minimal and avoids full IDT or PIC complexity
 - host-side unit tests now cover the new pure interrupt logic in `nucleus`
+- the current readiness state is modeled and host-testable, not yet proof of installed CPU exception handlers or hardware interrupt handlers
 
 Acceptance criteria:
 
@@ -303,7 +316,7 @@ Acceptance criteria:
 
 ### U3 — Controlled Exception Path
 
-Status: in progress
+Status: scaffolded
 
 Goal: introduce the first narrow, testable exception path.
 
@@ -317,17 +330,22 @@ Deliverables:
 Current implementation status:
 
 - the project now has explicit exception groundwork and host-testable interrupt state in `nucleus`
-- the next U3 step is to replace the current placeholder exception test flow with a real breakpoint-first exception path
-- the exception path should produce a clear success marker in bounded QEMU output
+- the current controlled exception path is still scaffolded and should not yet be treated as proof of a real handler-based exception path
+- the next U3 step is to wire explicit exception-test boot mode selection and then replace the scaffolded exception flow with a real breakpoint-first exception path
+- the exception path should produce a clear success marker in bounded QEMU output only when the real handler path is reached
 - double-fault handling should remain deferred until the first controlled exception path is stable and easy to validate
 
 Acceptance criteria:
 
+- an explicit exception-test boot mode exists and is easy to trigger from the project workflow
 - one real exception path is implemented and visible
 - the exception path is validated through bounded QEMU testing
+- the success marker is emitted by the real handler path, not by ordinary post-trigger control flow
 - the implementation remains narrow and easy to reason about
 
 ### U4 — Real Memory Foundation
+
+Status: not started
 
 Goal: move from placeholder memory state to real discovered memory information.
 
@@ -345,6 +363,8 @@ Acceptance criteria:
 
 ### U5 — Paging and Heap Direction
 
+Status: documentation-only
+
 Goal: define the smallest useful paging and heap direction.
 
 Deliverables:
@@ -361,6 +381,8 @@ Acceptance criteria:
 - heap support remains deferred unless justified by a concrete need
 
 ### U6 — Unix-like Kernel Boundary
+
+Status: documentation-only
 
 Goal: make the Unix-like direction concrete through small kernel interfaces.
 

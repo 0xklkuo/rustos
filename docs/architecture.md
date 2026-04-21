@@ -238,6 +238,7 @@ The exact boot implementation should remain as small as possible in early milest
 As the kernel structure is introduced, boot behavior should stay unchanged while code is moved behind clearer module boundaries. Structural refactors should preserve the current boot path and deterministic output.
 
 As runtime groundwork is added, the boot path should log each initialization phase in plain language. Early milestones should prefer visible sequencing such as:
+- boot mode selection
 - console initialization
 - architecture initialization
 - exception groundwork
@@ -248,6 +249,12 @@ As runtime groundwork is added, the boot path should log each initialization pha
 
 This keeps the system teachable and makes failures easier to localize during early boot.
 
+The boot path should also make the selected mode explicit in logs. At the current stage, the kernel should support at least:
+- a normal boot mode
+- a dedicated exception-test boot mode
+
+This keeps automated validation honest and avoids assuming that a special test path is active when the kernel is still running the normal boot flow.
+
 As exception and interrupt groundwork is added, the project should keep the subsystem narrow and explicit. Early interrupt-related code should prefer visible sequencing such as:
 - exception subsystem state creation
 - breakpoint and double-fault groundwork reporting
@@ -257,6 +264,17 @@ As exception and interrupt groundwork is added, the project should keep the subs
 
 This keeps low-level runtime work understandable and avoids introducing a large interrupt framework before the project has a concrete need for it.
 
+At this stage, the project should distinguish clearly between:
+- modeled groundwork
+- installed low-level handlers
+
+For example:
+- a host-testable readiness state in `nucleus` can model planned exception support
+- boot logs can report that groundwork is modeled
+- the project should only claim that handlers are installed once the kernel has actually set up the required low-level runtime structures
+
+This distinction keeps milestone reporting honest and prevents documentation or logs from overstating what the kernel can really do.
+
 As memory groundwork is added, the memory path should remain equally explicit. Early memory code should prefer visible sequencing such as:
 - memory subsystem state creation
 - memory map placeholder or discovery boundary
@@ -265,6 +283,14 @@ As memory groundwork is added, the memory path should remain equally explicit. E
 - clear reporting of what is initialized versus deferred
 
 This keeps the memory subsystem understandable and prevents the project from drifting into opaque low-level setup too early.
+
+The same reporting rule should apply across the kernel foundation milestones:
+- Milestones 0 through 3 should describe repository, workflow, and structural progress plainly
+- Milestone 4 should describe interrupt and timer work as groundwork until real low-level installation exists
+- Milestone 5 should describe memory work as placeholder or discovered-state groundwork until real memory-map integration exists
+- Milestone 6 should describe Unix-like direction as documentation-first until small kernel interfaces are actually implemented
+
+This keeps the architecture notes aligned with the real implementation state and supports contributor trust.
 
 As the Unix-like direction becomes more concrete, it should be layered on top of these foundations rather than introduced in parallel as a large design exercise. In practice, that means:
 - syscall direction should follow the runtime and memory groundwork
