@@ -184,8 +184,9 @@ Current implementation status:
 - the kernel now has a minimal module layout that can support runtime initialization growth
 - the boot flow now exposes a small explicit initialization sequence for architecture, interrupts, timer, memory, panic, and idle behavior
 - boot logs now show initialization order without changing the current boot success path
-- the first real breakpoint-handler path is now in progress, while interrupt and timer support still remain intentionally minimal
-- exception, interrupt, and timer readiness logs should distinguish modeled groundwork from installed low-level handlers
+- the first real breakpoint-handler path is now implemented and validated through bounded QEMU testing
+- interrupt and timer support still remain intentionally minimal beyond the breakpoint-first exception path
+- exception, interrupt, and timer readiness logs should continue to distinguish modeled groundwork from installed low-level handlers
 - this milestone remains partially complete because timer and broader interrupt runtime setup are still deferred
 
 Acceptance criteria:
@@ -303,7 +304,7 @@ Current implementation status:
 - the boot flow now reports exception and interrupt initialization separately in plain language
 - exception and interrupt work still stays minimal and avoids full PIC or APIC complexity
 - host-side unit tests now cover the new pure interrupt logic in `nucleus`
-- the project is moving from modeled exception groundwork toward a real breakpoint-handler path, while broader hardware interrupt handling remains deferred
+- the project now includes a real breakpoint-handler path, while broader hardware interrupt handling remains deferred
 
 Acceptance criteria:
 
@@ -315,7 +316,7 @@ Acceptance criteria:
 
 ### U3 — Controlled Exception Path
 
-Status: in progress
+Status: complete for the first breakpoint path
 
 Goal: introduce the first narrow, testable exception path.
 
@@ -330,9 +331,9 @@ Current implementation status:
 
 - the project now has explicit exception groundwork and host-testable interrupt state in `nucleus`
 - explicit exception-test boot mode selection is part of the project workflow
-- the controlled exception path is being upgraded from a scaffolded flow to a real breakpoint-first exception path
-- the exception path should produce a clear success marker in bounded QEMU output only when the real handler path is reached
-- double-fault handling should remain deferred until the first controlled exception path is stable and easy to validate
+- the controlled exception path now includes a real breakpoint-first exception path
+- the exception path now produces a clear success marker in bounded QEMU output only when the real handler path is reached
+- double-fault handling remains deferred until the first controlled exception path is stable and easy to validate
 
 Acceptance criteria:
 

@@ -44,6 +44,12 @@ pub const EXCEPTION_INIT_PENDING_MESSAGE: &str = "rustos: exception init pending
 /// Runtime log message printed after modeled exception groundwork completes.
 pub const EXCEPTION_INIT_COMPLETE_MESSAGE: &str = "rustos: exception groundwork modeled";
 
+/// Runtime log message printed after modeled interrupt groundwork completes.
+pub const INTERRUPT_GROUNDWORK_MODELED_MESSAGE: &str = "rustos: interrupt groundwork modeled";
+
+/// Runtime log message printed after modeled timer groundwork completes.
+pub const TIMER_GROUNDWORK_MODELED_MESSAGE: &str = "rustos: timer groundwork modeled";
+
 /// Runtime log message printed when real exception handlers are installed.
 pub const EXCEPTION_HANDLERS_INSTALLED_MESSAGE: &str = "rustos: exception handlers installed";
 
@@ -69,7 +75,7 @@ pub const INTERRUPT_INIT_MESSAGE: &str = "rustos: interrupt init";
 pub const INTERRUPT_INIT_PENDING_MESSAGE: &str = "rustos: interrupt init pending";
 
 /// Runtime log message printed after modeled interrupt groundwork completes.
-pub const INTERRUPT_INIT_COMPLETE_MESSAGE: &str = "rustos: interrupt groundwork modeled";
+pub const INTERRUPT_INIT_COMPLETE_MESSAGE: &str = INTERRUPT_GROUNDWORK_MODELED_MESSAGE;
 
 /// Runtime log message printed before timer groundwork begins.
 pub const TIMER_INIT_MESSAGE: &str = "rustos: timer init";
@@ -78,7 +84,7 @@ pub const TIMER_INIT_MESSAGE: &str = "rustos: timer init";
 pub const TIMER_INIT_PENDING_MESSAGE: &str = "rustos: timer init pending";
 
 /// Runtime log message printed after modeled timer groundwork completes.
-pub const TIMER_INIT_COMPLETE_MESSAGE: &str = "rustos: timer groundwork modeled";
+pub const TIMER_INIT_COMPLETE_MESSAGE: &str = TIMER_GROUNDWORK_MODELED_MESSAGE;
 
 /// Runtime log message printed before memory groundwork begins.
 pub const MEMORY_INIT_MESSAGE: &str = "rustos: memory init";

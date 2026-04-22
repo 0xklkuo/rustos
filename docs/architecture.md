@@ -149,6 +149,7 @@ Kernel structure for growth:
 Core runtime groundwork:
 - explicit runtime initialization order
 - exception groundwork
+- first real breakpoint-handler path
 - interrupt setup skeleton
 - timer groundwork
 - idle or halt behavior placeholder
@@ -182,7 +183,7 @@ These boundaries are intended to keep the code understandable as the project gro
 
 For Milestone 3, these modules should remain intentionally small. The goal is to make responsibilities obvious without introducing deep abstraction, generic frameworks, or speculative subsystem design.
 
-For Milestone 4, the same modules should begin to expose a clearer runtime sequence without becoming a full subsystem implementation. The immediate goal is to make initialization order visible and easy to reason about before introducing real interrupt tables, timer drivers, or memory managers.
+For Milestone 4, the same modules should begin to expose a clearer runtime sequence without becoming a full subsystem implementation. The immediate goal is to make initialization order visible and easy to reason about while introducing only the smallest justified low-level runtime pieces, such as the first real breakpoint-handler path, before broader interrupt tables, timer drivers, or memory managers are added.
 
 For the next exception and interrupt groundwork stage, the interrupt module should become more explicit without pretending to be complete. The immediate goal is to introduce a small, well-documented subsystem shape that can answer:
 - whether exception groundwork has been initialized
@@ -191,7 +192,7 @@ For the next exception and interrupt groundwork stage, the interrupt module shou
 - which interrupt paths are intentionally deferred
 - how success and failure should appear in logs and bounded emulator tests
 
-This stage should still avoid premature IDT, PIC, APIC, or keyboard-driver complexity that is not yet justified by the code.
+This stage should still avoid premature PIC, APIC, keyboard-driver, or broader interrupt-framework complexity that is not yet justified by the code. A minimal IDT-backed breakpoint path is now justified because it provides the first real controlled exception milestone without forcing a larger interrupt subsystem.
 
 For Milestone 5, the memory module should become more explicit without pretending to be complete. The immediate goal is to introduce a small, well-documented memory subsystem shape that can answer:
 - whether memory initialization has happened
@@ -255,6 +256,8 @@ The boot path should also make the selected mode explicit in logs. At the curren
 
 This keeps automated validation honest and avoids assuming that a special test path is active when the kernel is still running the normal boot flow.
 
+For the current minimal implementation, exception-test mode may be selected through a small explicit boot marker mechanism instead of a broader boot-argument or configuration system. This is acceptable because it keeps the boot path easy to inspect and avoids introducing a larger runtime configuration layer too early.
+
 As exception and interrupt groundwork is added, the project should keep the subsystem narrow and explicit. Early interrupt-related code should prefer visible sequencing such as:
 - exception subsystem state creation
 - breakpoint and double-fault groundwork reporting
@@ -264,6 +267,13 @@ As exception and interrupt groundwork is added, the project should keep the subs
 
 This keeps low-level runtime work understandable and avoids introducing a large interrupt framework before the project has a concrete need for it.
 
+At the current stage, the project now has one narrow real exception path:
+- a minimal x86_64 breakpoint handler
+- a small IDT-backed installation step
+- a handler-originated success marker used by bounded emulator validation
+
+This should be treated as a focused milestone, not as proof that the broader interrupt subsystem is complete.
+
 At this stage, the project should distinguish clearly between:
 - modeled groundwork
 - installed low-level handlers
@@ -272,6 +282,7 @@ For example:
 - a host-testable readiness state in `nucleus` can model planned exception support
 - boot logs can report that groundwork is modeled
 - the project should only claim that handlers are installed once the kernel has actually set up the required low-level runtime structures
+- the current breakpoint path can be described as a real installed handler, while timer and broader interrupt support should still be described as groundwork
 
 This distinction keeps milestone reporting honest and prevents documentation or logs from overstating what the kernel can really do.
 
@@ -286,7 +297,7 @@ This keeps the memory subsystem understandable and prevents the project from dri
 
 The same reporting rule should apply across the kernel foundation milestones:
 - Milestones 0 through 3 should describe repository, workflow, and structural progress plainly
-- Milestone 4 should describe interrupt and timer work as groundwork until real low-level installation exists
+- Milestone 4 should describe the real breakpoint-handler path as implemented, while timer and broader interrupt work should still be described as groundwork
 - Milestone 5 should describe memory work as placeholder or discovered-state groundwork until real memory-map integration exists
 - Milestone 6 should describe Unix-like direction as documentation-first until small kernel interfaces are actually implemented
 

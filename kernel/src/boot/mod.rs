@@ -23,7 +23,7 @@ pub enum Mode {
 /// - selects a boot mode from a dedicated startup-script marker file when present
 /// - falls back to the normal boot mode when no explicit marker is present
 /// - runs a small runtime initialization sequence
-/// - optionally runs a controlled exception test
+/// - optionally runs the completed breakpoint exception test path
 /// - returns success to UEFI
 pub fn run() -> Status {
     run_with_mode(selected_mode())
@@ -52,7 +52,7 @@ pub fn run_with_mode(mode: Mode) -> Status {
 /// Runs the minimal runtime initialization sequence.
 ///
 /// This keeps the initialization order visible in boot logs while the
-/// underlying subsystems are still placeholders.
+/// broader interrupt, timer, and memory subsystems remain intentionally small.
 fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::RUNTIME_INIT_START_MESSAGE);
 
@@ -80,7 +80,6 @@ fn initialize_runtime(console_state: crate::console::State) {
 
     if crate::interrupt::has_real_exception_handlers() {
         crate::console::write_line(crate::EXCEPTION_HANDLERS_INSTALLED_MESSAGE);
-        crate::console::write_line(crate::BREAKPOINT_HANDLER_ACTIVE_MESSAGE);
     }
 
     crate::console::write_line(crate::INTERRUPT_INIT_MESSAGE);
@@ -119,6 +118,7 @@ fn initialize_runtime(console_state: crate::console::State) {
 /// This keeps boot-mode selection minimal:
 /// - use a dedicated startup-script marker file when it is present
 /// - otherwise fall back to the normal boot mode
+/// - avoid introducing a larger boot argument parser for one narrow test path
 fn selected_mode() -> Mode {
     #[cfg(target_os = "uefi")]
     {
@@ -178,9 +178,9 @@ const fn boot_mode_label(mode: Mode) -> &'static str {
 
 /// Runs the controlled exception test flow.
 ///
-/// This function is intentionally small for the current milestone. It reports
-/// the current controlled exception path honestly so contributors can see
-/// whether the kernel is still exercising a scaffolded path or a real handler.
+/// This function stays intentionally small for the completed breakpoint
+/// milestone. It reports the real controlled exception path explicitly so
+/// contributors can see when the breakpoint handler test starts and completes.
 fn run_exception_test() {
     crate::console::write_line(crate::EXCEPTION_TEST_START_MESSAGE);
     let exception = crate::interrupt::controlled_exception();
@@ -190,9 +190,7 @@ fn run_exception_test() {
     ));
 
     if !crate::interrupt::has_real_exception_handlers() {
-        crate::console::write_line(crate::interrupt::controlled_exception_success_marker(
-            exception,
-        ));
+        crate::console::write_line(crate::EXCEPTION_INIT_PENDING_MESSAGE);
         crate::console::write_line(crate::EXCEPTION_TEST_COMPLETE_MESSAGE);
         return;
     }
