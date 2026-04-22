@@ -158,7 +158,8 @@ Core runtime groundwork:
 
 ### Stage 4
 Memory management foundation:
-- memory map handling
+- real memory map discovery through UEFI
+- a small discovered-memory summary
 - frame allocator skeleton
 - explicit memory subsystem state
 - heap strategy decision
@@ -196,11 +197,12 @@ This stage should still avoid premature PIC, APIC, keyboard-driver, or broader i
 
 For Milestone 5, the memory module should become more explicit without pretending to be complete. The immediate goal is to introduce a small, well-documented memory subsystem shape that can answer:
 - whether memory initialization has happened
+- whether a real UEFI memory map has been discovered
 - what memory information is currently known
 - where a future frame allocator will live
 - whether heap support exists yet
 
-This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code.
+This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code. The first real memory milestone should focus on discovering and summarizing the UEFI memory map in plain language before introducing paging or allocation policy.
 
 ## Boot Strategy
 
@@ -288,7 +290,8 @@ This distinction keeps milestone reporting honest and prevents documentation or 
 
 As memory groundwork is added, the memory path should remain equally explicit. Early memory code should prefer visible sequencing such as:
 - memory subsystem state creation
-- memory map placeholder or discovery boundary
+- real UEFI memory map discovery
+- a small discovered-memory summary
 - frame allocator placeholder
 - heap support status
 - clear reporting of what is initialized versus deferred
@@ -298,7 +301,7 @@ This keeps the memory subsystem understandable and prevents the project from dri
 The same reporting rule should apply across the kernel foundation milestones:
 - Milestones 0 through 3 should describe repository, workflow, and structural progress plainly
 - Milestone 4 should describe the real breakpoint-handler path as implemented, while timer and broader interrupt work should still be described as groundwork
-- Milestone 5 should describe memory work as placeholder or discovered-state groundwork until real memory-map integration exists
+- Milestone 5 should describe memory work as discovered-state groundwork once real UEFI memory-map integration exists, while frame allocation and heap support remain intentionally minimal
 - Milestone 6 should describe Unix-like direction as documentation-first until small kernel interfaces are actually implemented
 
 This keeps the architecture notes aligned with the real implementation state and supports contributor trust.

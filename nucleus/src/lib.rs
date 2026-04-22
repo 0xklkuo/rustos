@@ -533,6 +533,14 @@ pub mod memory {
         heap_strategy: HeapStrategy,
     }
 
+    /// Small host-testable summary of discovered memory information.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct DiscoveredMemory {
+        descriptor_count: usize,
+        conventional_regions: usize,
+        conventional_bytes: u64,
+    }
+
     impl State {
         /// Creates a new uninitialized memory state.
         #[must_use]
@@ -566,6 +574,88 @@ pub mod memory {
     impl Default for State {
         fn default() -> Self {
             Self::new()
+        }
+    }
+
+    impl DiscoveredMemory {
+        /// Creates a new empty discovered-memory summary.
+        #[must_use]
+        pub const fn new() -> Self {
+            Self {
+                descriptor_count: 0,
+                conventional_regions: 0,
+                conventional_bytes: 0,
+            }
+        }
+
+        /// Returns a discovered-memory summary with explicit values.
+        #[must_use]
+        pub const fn from_counts(
+            descriptor_count: usize,
+            conventional_regions: usize,
+            conventional_bytes: u64,
+        ) -> Self {
+            Self {
+                descriptor_count,
+                conventional_regions,
+                conventional_bytes,
+            }
+        }
+
+        /// Returns the number of memory descriptors observed.
+        #[must_use]
+        pub const fn descriptor_count(self) -> usize {
+            self.descriptor_count
+        }
+
+        /// Returns the number of conventional memory regions observed.
+        #[must_use]
+        pub const fn conventional_regions(self) -> usize {
+            self.conventional_regions
+        }
+
+        /// Returns the total conventional memory bytes observed.
+        #[must_use]
+        pub const fn conventional_bytes(self) -> u64 {
+            self.conventional_bytes
+        }
+
+        /// Returns a new summary after recording one descriptor.
+        #[must_use]
+        pub const fn record_descriptor(self) -> Self {
+            Self {
+                descriptor_count: self.descriptor_count + 1,
+                conventional_regions: self.conventional_regions,
+                conventional_bytes: self.conventional_bytes,
+            }
+        }
+
+        /// Returns a new summary after recording one conventional region.
+        #[must_use]
+        pub const fn record_conventional_region(self, bytes: u64) -> Self {
+            Self {
+                descriptor_count: self.descriptor_count + 1,
+                conventional_regions: self.conventional_regions + 1,
+                conventional_bytes: self.conventional_bytes + bytes,
+            }
+        }
+    }
+
+    impl Default for DiscoveredMemory {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    /// Returns a small plain-language summary of discovered memory information.
+    #[must_use]
+    pub const fn discovered_memory_summary(memory: DiscoveredMemory) -> &'static str {
+        if memory.conventional_regions() > 0 {
+            "rustos: discovered conventional memory"
+        } else if memory.descriptor_count() > 0 {
+            "rustos: discovered memory map"
+        } else {
+            "rustos: discovered memory pending"
         }
     }
 
@@ -658,8 +748,8 @@ pub mod memory {
     #[cfg(test)]
     mod tests {
         use super::{
-            FrameAllocator, HeapStrategy, State, frame_allocator, init, is_initialized,
-            state_summary,
+            DiscoveredMemory, FrameAllocator, HeapStrategy, State, discovered_memory_summary,
+            frame_allocator, init, is_initialized, state_summary,
         };
 
         #[test]
@@ -701,6 +791,57 @@ pub mod memory {
             let allocator = allocator.reserve();
 
             assert_eq!(allocator.next_frame(), 2);
+        }
+
+        #[test]
+        fn discovered_memory_starts_empty() {
+            let memory = DiscoveredMemory::new();
+
+            assert_eq!(memory.descriptor_count(), 0);
+            assert_eq!(memory.conventional_regions(), 0);
+            assert_eq!(memory.conventional_bytes(), 0);
+            assert_eq!(
+                discovered_memory_summary(memory),
+                "rustos: discovered memory pending"
+            );
+        }
+
+        #[test]
+        fn discovered_memory_records_descriptor_and_region_counts() {
+            let memory = DiscoveredMemory::new();
+            let memory = memory.record_descriptor();
+            let memory = memory.record_conventional_region(4096);
+
+            assert_eq!(memory.descriptor_count(), 2);
+            assert_eq!(memory.conventional_regions(), 1);
+            assert_eq!(memory.conventional_bytes(), 4096);
+            assert_eq!(
+                discovered_memory_summary(memory),
+                "rustos: discovered conventional memory"
+            );
+        }
+
+        #[test]
+        fn discovered_memory_from_counts_preserves_values() {
+            let memory = DiscoveredMemory::from_counts(4, 2, 8192);
+
+            assert_eq!(memory.descriptor_count(), 4);
+            assert_eq!(memory.conventional_regions(), 2);
+            assert_eq!(memory.conventional_bytes(), 8192);
+            assert_eq!(
+                discovered_memory_summary(memory),
+                "rustos: discovered conventional memory"
+            );
+        }
+
+        #[test]
+        fn discovered_memory_summary_reports_map_without_conventional_regions() {
+            let memory = DiscoveredMemory::from_counts(3, 0, 0);
+
+            assert_eq!(
+                discovered_memory_summary(memory),
+                "rustos: discovered memory map"
+            );
         }
     }
 }

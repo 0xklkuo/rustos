@@ -57,7 +57,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone U3 — controlled exception path
+- Milestone U4 — real memory foundation
 
 ## Roadmap
 
@@ -232,7 +232,7 @@ It:
 - prints deterministic boot messages
 - exits successfully
 
-This is a bootable foundation, not yet a full kernel runtime.
+This is a bootable foundation with a real breakpoint-first exception path and early real memory-map groundwork, not yet a full kernel runtime.
 
 ### Notes
 
@@ -244,6 +244,7 @@ This is a bootable foundation, not yet a full kernel runtime.
 - `test-exception` should be used when validating the controlled exception path separately from the normal boot smoke test.
 - the controlled exception path now uses a real breakpoint-handler milestone with a handler-originated success marker.
 - the exception smoke test validates explicit exception-mode boot selection and the real breakpoint handler path.
+- the next memory milestone should validate real UEFI memory-map discovery while keeping paging and heap support deferred.
 - nightly is currently required for that low-level handler boundary, so compatibility should be reviewed carefully whenever kernel exception dependencies change.
 - `test-unit` is intended for fast host-side feedback before running emulator-based validation.
 - Host-testable pure logic should prefer `nucleus/`, while firmware-facing runtime code should remain in `kernel/`.

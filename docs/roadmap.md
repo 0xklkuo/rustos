@@ -197,7 +197,7 @@ Acceptance criteria:
 
 ### Milestone 5 — Memory Management Foundation
 
-Status: scaffolded
+Status: in progress
 
 Goal: introduce the smallest useful memory subsystem.
 
@@ -211,9 +211,10 @@ Deliverables:
 Current implementation status:
 
 - the current memory module exposes a small initialization state and a frame allocator skeleton through host-testable logic in `nucleus`
-- the current implementation does not yet use real discovered memory information from UEFI
-- the next Milestone 5 step is to introduce a minimal memory map model and connect the frame allocator direction to real discovered memory without claiming full paging or heap support
-- memory-related boot output should stay explicit and plain-language so contributors can see what is initialized and what is still deferred
+- the project now also has a small host-testable discovered-memory summary type for descriptor counts, conventional-memory region counts, and conventional-memory bytes
+- the current implementation still does not yet read real discovered memory information from UEFI at runtime
+- the next Milestone 5 step is to connect the kernel memory path to the real UEFI memory map and report a minimal discovered-memory summary without claiming full paging or heap support
+- memory-related boot output should stay explicit and plain-language so contributors can see what is initialized, what is discovered, and what is still deferred
 - allocator work should remain a documented decision first, and only become code if it is clearly needed by the next milestone
 
 Acceptance criteria:
@@ -345,7 +346,7 @@ Acceptance criteria:
 
 ### U4 — Real Memory Foundation
 
-Status: not started
+Status: in progress
 
 Goal: move from placeholder memory state to real discovered memory information.
 
@@ -354,6 +355,12 @@ Deliverables:
 - real memory map boundary
 - frame allocator groundwork backed by discovered memory
 - host-side tests for memory bookkeeping where possible
+
+Current implementation status:
+
+- the project now has a small host-testable discovered-memory summary in `nucleus`
+- the kernel memory path still needs to connect that summary to real UEFI memory-map discovery
+- the frame allocator direction remains intentionally minimal and should only be connected to discovered memory information, not expanded into paging or heap work yet
 
 Acceptance criteria:
 

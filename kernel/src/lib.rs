@@ -101,6 +101,15 @@ pub const MEMORY_INIT_DEFERRED_MESSAGE: &str = "rustos: memory init deferred";
 /// Runtime log message printed when memory map discovery begins.
 pub const MEMORY_MAP_INIT_MESSAGE: &str = "rustos: memory map init";
 
+/// Runtime log message printed when discovered memory information is still pending.
+pub const DISCOVERED_MEMORY_PENDING_MESSAGE: &str = "rustos: discovered memory pending";
+
+/// Runtime log message printed when a memory map has been discovered.
+pub const DISCOVERED_MEMORY_MAP_MESSAGE: &str = "rustos: discovered memory map";
+
+/// Runtime log message printed when conventional memory has been discovered.
+pub const DISCOVERED_CONVENTIONAL_MEMORY_MESSAGE: &str = "rustos: discovered conventional memory";
+
 /// Runtime log message printed when frame allocator setup begins.
 pub const FRAME_ALLOCATOR_INIT_MESSAGE: &str = "rustos: frame allocator init";
 
