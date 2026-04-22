@@ -78,6 +78,7 @@ fn initialize_runtime(console_state: crate::console::State) {
 
     if crate::interrupt::has_real_exception_handlers() {
         crate::console::write_line(crate::EXCEPTION_HANDLERS_INSTALLED_MESSAGE);
+        crate::console::write_line(crate::BREAKPOINT_HANDLER_ACTIVE_MESSAGE);
     }
 
     crate::console::write_line(crate::INTERRUPT_INIT_MESSAGE);
@@ -131,6 +132,15 @@ fn run_exception_test() {
     crate::console::write_line(crate::interrupt::controlled_exception_stage_label(
         exception,
     ));
+
+    if !crate::interrupt::has_real_exception_handlers() {
+        crate::console::write_line(crate::interrupt::controlled_exception_success_marker(
+            exception,
+        ));
+        crate::console::write_line(crate::EXCEPTION_TEST_COMPLETE_MESSAGE);
+        return;
+    }
+
     crate::interrupt::trigger_controlled_exception(exception);
     crate::interrupt::report_controlled_exception(exception);
     crate::console::write_line(crate::EXCEPTION_TEST_COMPLETE_MESSAGE);

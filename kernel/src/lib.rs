@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(target_os = "uefi", feature(abi_x86_interrupt))]
 
 //! Shared kernel modules and small constants for `rustos`.
 //!
@@ -46,11 +47,17 @@ pub const EXCEPTION_INIT_COMPLETE_MESSAGE: &str = "rustos: exception groundwork 
 /// Runtime log message printed when real exception handlers are installed.
 pub const EXCEPTION_HANDLERS_INSTALLED_MESSAGE: &str = "rustos: exception handlers installed";
 
+/// Runtime log message printed when the first real breakpoint handler path is active.
+pub const BREAKPOINT_HANDLER_ACTIVE_MESSAGE: &str = "rustos: breakpoint handler active";
+
 /// Runtime log message printed before a controlled exception test begins.
 pub const EXCEPTION_TEST_START_MESSAGE: &str = "rustos: exception test start";
 
 /// Runtime log message printed when a controlled breakpoint test is requested.
 pub const BREAKPOINT_TEST_MESSAGE: &str = "rustos: breakpoint test";
+
+/// Runtime log message printed when the real breakpoint handler is reached.
+pub const BREAKPOINT_HANDLER_REACHED_MESSAGE: &str = "rustos: breakpoint handler reached";
 
 /// Runtime log message printed after a controlled exception test completes.
 pub const EXCEPTION_TEST_COMPLETE_MESSAGE: &str = "rustos: exception test complete";

@@ -15,7 +15,7 @@ const STARTUP_SCRIPT_PATH: &str = "startup.nsh";
 const DEFAULT_MEMORY_MB: &str = "256M";
 const DEFAULT_TEST_TIMEOUT_SECS: u64 = 10;
 const SUCCESS_MARKER: &str = "rustos: hello from UEFI";
-const EXCEPTION_SUCCESS_MARKER: &str = "rustos: breakpoint scaffold reached";
+const EXCEPTION_SUCCESS_MARKER: &str = "rustos: breakpoint handler reached";
 const NORMAL_STARTUP_SCRIPT: &str = "fs0:\r\nEFI\\BOOT\\BOOTX64.EFI\r\n";
 const EXCEPTION_TEST_STARTUP_SCRIPT: &str = "fs0:\r\nEFI\\BOOT\\BOOTX64.EFI exception-test\r\n";
 

@@ -130,10 +130,9 @@ Current implementation status:
 
 - `xtask` already provides `check`, `fmt`, `lint`, `run`, `test-unit`, `test-qemu`, `test-exception`, and `test`
 - the local workflow uses direct QEMU execution instead of a wrapper tool
-- CI already validates workspace checks, formatting, clippy, unit tests, and the bounded QEMU boot smoke test
+- CI already validates workspace checks, formatting, clippy, unit tests, the bounded QEMU boot smoke test, and a separate exception smoke test
 - contributor-facing templates and baseline guidance are already present
-- the remaining gap is to add separate CI coverage for the exception smoke test once the controlled exception path is real
-- this milestone is effectively complete for the current project stage, with the exception-path CI follow-up intentionally deferred
+- this milestone is effectively complete for the current project stage
 
 Acceptance criteria:
 
@@ -185,9 +184,9 @@ Current implementation status:
 - the kernel now has a minimal module layout that can support runtime initialization growth
 - the boot flow now exposes a small explicit initialization sequence for architecture, interrupts, timer, memory, panic, and idle behavior
 - boot logs now show initialization order without changing the current boot success path
-- interrupt and timer support currently remain modeled groundwork and placeholders, not a full subsystem
-- exception, interrupt, and timer readiness logs currently describe modeled groundwork, not installed low-level handlers
-- this milestone is partially complete and intentionally remains below full hardware-real runtime setup
+- the first real breakpoint-handler path is now in progress, while interrupt and timer support still remain intentionally minimal
+- exception, interrupt, and timer readiness logs should distinguish modeled groundwork from installed low-level handlers
+- this milestone remains partially complete because timer and broader interrupt runtime setup are still deferred
 
 Acceptance criteria:
 
@@ -285,7 +284,7 @@ Acceptance criteria:
 
 ### U2 — Exception and Interrupt Groundwork
 
-Status: partially complete
+Status: in progress
 
 Goal: introduce the smallest useful exception and interrupt foundation aligned with the current minimal kernel direction.
 
@@ -302,9 +301,9 @@ Current implementation status:
 
 - the project now has explicit exception and interrupt subsystem state instead of treating interrupts as part of generic architecture state
 - the boot flow now reports exception and interrupt initialization separately in plain language
-- exception and interrupt work still stays minimal and avoids full IDT or PIC complexity
+- exception and interrupt work still stays minimal and avoids full PIC or APIC complexity
 - host-side unit tests now cover the new pure interrupt logic in `nucleus`
-- the current readiness state is modeled and host-testable, not yet proof of installed CPU exception handlers or hardware interrupt handlers
+- the project is moving from modeled exception groundwork toward a real breakpoint-handler path, while broader hardware interrupt handling remains deferred
 
 Acceptance criteria:
 
@@ -316,7 +315,7 @@ Acceptance criteria:
 
 ### U3 — Controlled Exception Path
 
-Status: scaffolded
+Status: in progress
 
 Goal: introduce the first narrow, testable exception path.
 
@@ -330,8 +329,8 @@ Deliverables:
 Current implementation status:
 
 - the project now has explicit exception groundwork and host-testable interrupt state in `nucleus`
-- the current controlled exception path is still scaffolded and should not yet be treated as proof of a real handler-based exception path
-- the next U3 step is to wire explicit exception-test boot mode selection and then replace the scaffolded exception flow with a real breakpoint-first exception path
+- explicit exception-test boot mode selection is part of the project workflow
+- the controlled exception path is being upgraded from a scaffolded flow to a real breakpoint-first exception path
 - the exception path should produce a clear success marker in bounded QEMU output only when the real handler path is reached
 - double-fault handling should remain deferred until the first controlled exception path is stable and easy to validate
 

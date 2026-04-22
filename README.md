@@ -77,11 +77,13 @@ The current workflow focuses on keeping validation explicit, minimal, and aligne
 
 Install:
 
-- stable Rust
+- nightly Rust
 - the `x86_64-unknown-uefi` Rust target
 - QEMU with `qemu-system-x86_64`
 
 The Rust toolchain and target are pinned in `rust-toolchain.toml`.
+
+Nightly is currently required for the first real x86_64 breakpoint handler path because the `x86-interrupt` ABI is still unstable. Keep the nightly-only surface as small as possible and prefer stable-compatible code everywhere else.
 
 #### Suggested macOS Setup
 
@@ -107,7 +109,9 @@ The current workflow is:
 6. `cargo run -p xtask -- test-exception`
 7. `cargo run -p xtask -- run` when you want an interactive QEMU session
 
-`test-exception` is intended to boot the kernel in an explicit exception-test mode. At the current stage, this validates the dedicated exception-test boot path and controlled exception scaffold. It does not yet prove that a real hardware exception handler is installed.
+`test-exception` is intended to boot the kernel in an explicit exception-test mode. The next controlled-exception milestone is to validate a real breakpoint-first exception path with a handler-originated success marker.
+
+Nightly is used carefully here because the real breakpoint handler path depends on unstable Rust support for the `x86-interrupt` ABI. This should remain tightly scoped to the low-level exception boundary so the rest of the project stays as stable and maintainable as possible.
 
 `test-unit` is intended to cover host-testable pure logic, which should increasingly live in `nucleus/` instead of the UEFI-facing `kernel/` crate.
 
@@ -156,7 +160,7 @@ The current `xtask` commands are:
 - `lint` — runs `clippy` with warnings denied
 - `test-unit` — runs host-side unit tests for workspace crates, especially pure logic in `nucleus/`
 - `test-qemu` — launches QEMU in bounded test mode and exits automatically after success or timeout
-- `test-exception` — launches a bounded exception smoke test in QEMU using an explicit exception-test boot mode
+- `test-exception` — launches a bounded exception smoke test in QEMU using an explicit exception-test boot mode and is intended to validate the real breakpoint handler milestone once that path is complete
 - `test` — runs the unit-test flow first, then the bounded QEMU test
 - `run` — launches QEMU interactively for manual inspection
 
@@ -238,8 +242,9 @@ This is a bootable foundation, not yet a full kernel runtime.
 - The boot directory includes a `startup.nsh` script so the UEFI shell can launch `BOOTX64.EFI` automatically.
 - `test-qemu` is the preferred command for automated environments because it does not hang indefinitely.
 - `test-exception` should be used when validating the controlled exception path separately from the normal boot smoke test.
-- the exception smoke test currently validates explicit exception-mode boot selection and controlled exception scaffolding.
-- a later milestone will replace the scaffold marker with a real handler-originated success marker.
+- the controlled exception path is moving from scaffolded reporting to a real breakpoint-handler milestone.
+- the target end state for this milestone is a handler-originated success marker instead of a post-trigger scaffold marker.
+- nightly is currently required for that low-level handler boundary, so compatibility should be reviewed carefully whenever kernel exception dependencies change.
 - `test-unit` is intended for fast host-side feedback before running emulator-based validation.
 - Host-testable pure logic should prefer `nucleus/`, while firmware-facing runtime code should remain in `kernel/`.
 - More detailed boot and debugging guidance can be added once the run path is stable across environments.

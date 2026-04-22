@@ -306,13 +306,15 @@ The project should use a minimal modern Rust workflow.
 
 Planned tooling:
 - Rust workspace
-- stable Rust toolchain with the `x86_64-unknown-uefi` target
+- nightly Rust toolchain with the `x86_64-unknown-uefi` target for the current x86_64 exception milestone
 - `cargo fmt`
 - `cargo clippy`
 - `cargo check`
 - `cargo xtask` for project-specific workflows
 - GitHub Actions for CI
 - direct QEMU-based local execution through a small EFI directory workflow
+
+The current breakpoint-handler milestone requires the unstable `abi_x86_interrupt` language feature because the `extern "x86-interrupt"` calling convention is still nightly-only. This nightly requirement should stay narrowly scoped to the current low-level exception work and should be revisited when the Rust and crate ecosystem support a stable alternative.
 
 Tooling should support the project without becoming a project of its own.
 

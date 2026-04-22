@@ -43,7 +43,7 @@ The recommended first exception is a breakpoint-style path because it is easier 
 
 During the current scaffolded stage, the exception smoke test should boot the kernel in an explicit exception-test mode instead of assuming the normal boot path will trigger exception behavior automatically.
 
-Until a real exception handler is installed, any exception-path success marker should be treated as a scaffold marker, not proof that a hardware exception handler ran.
+Once a real exception handler is installed, the exception-path success marker should be emitted by the handler itself, not by ordinary control flow after the trigger instruction.
 
 ### 3. Keep tests bounded
 
@@ -132,10 +132,9 @@ For exception and interrupt groundwork, prefer smoke tests that answer one quest
 For the controlled exception path stage, the exception smoke test should answer an even narrower question:
 - does the kernel enter an explicit exception-test boot mode?
 - can the kernel trigger one deliberate exception safely?
-- does the expected exception log appear?
+- does the real breakpoint handler run?
+- does the handler-originated success marker appear?
 - does the system remain bounded and diagnosable?
-
-Until the first real handler is installed, phrase this test as validation of the exception-test boot path and controlled exception scaffold, not as proof of full exception-handler correctness.
 
 Avoid combining many low-level behaviors into one emulator test.
 
@@ -277,10 +276,10 @@ For exception and interrupt groundwork, add a QEMU test only when:
 For the controlled exception path stage, the preferred success marker should be a plain-language exception log that clearly distinguishes:
 - exception-test boot mode entered
 - exception trigger start
-- scaffold marker or real handler marker reached
+- real breakpoint handler reached
 - exception handling complete or expected stop condition
 
-When the implementation is still scaffolded, the logs should say so plainly. Once a real handler exists, the success marker should come from the handler path itself.
+The success marker should come from the handler path itself.
 
 ## What to Avoid
 
@@ -311,7 +310,7 @@ The testing strategy is working if:
 - align CI with the same split
 - extract host-testable pure logic into a small crate such as `nucleus`
 - make exception-test boot mode explicit in the kernel and test workflow
-- keep exception-path documentation honest while the handler path is still scaffolded
+- require handler-originated success markers for the first real exception path
 
 ### Later steps
 - add exception smoke tests
