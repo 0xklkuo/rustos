@@ -147,11 +147,11 @@ pub fn trigger_breakpoint() {
 #[must_use]
 pub const fn handler_summary(state: HandlerState) -> &'static str {
     if state.is_breakpoint_handler_reached() {
-        "rustos: breakpoint handler reached"
+        crate::BREAKPOINT_HANDLER_REACHED_MESSAGE
     } else if state.is_breakpoint_handler_installed() && state.is_idt_loaded() {
-        "rustos: breakpoint handler installed"
+        crate::BREAKPOINT_HANDLER_ACTIVE_MESSAGE
     } else {
-        "rustos: breakpoint handler not installed"
+        crate::EXCEPTION_INIT_PENDING_MESSAGE
     }
 }
 
@@ -172,7 +172,7 @@ mod tests {
         assert!(!state.is_breakpoint_handler_reached());
         assert_eq!(
             handler_summary(state),
-            "rustos: breakpoint handler not installed"
+            crate::EXCEPTION_INIT_PENDING_MESSAGE
         );
     }
 
@@ -185,7 +185,7 @@ mod tests {
         assert!(!state.is_breakpoint_handler_reached());
         assert_eq!(
             handler_summary(state),
-            "rustos: breakpoint handler installed"
+            crate::BREAKPOINT_HANDLER_ACTIVE_MESSAGE
         );
     }
 
@@ -196,7 +196,10 @@ mod tests {
         assert!(state.is_idt_loaded());
         assert!(state.is_breakpoint_handler_installed());
         assert!(state.is_breakpoint_handler_reached());
-        assert_eq!(handler_summary(state), "rustos: breakpoint handler reached");
+        assert_eq!(
+            handler_summary(state),
+            crate::BREAKPOINT_HANDLER_REACHED_MESSAGE
+        );
     }
 
     #[test]

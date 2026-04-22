@@ -20,11 +20,13 @@ pub enum Mode {
 /// The current flow:
 /// - initializes console output
 /// - prints deterministic boot messages
+/// - selects a boot mode from a dedicated startup-script marker file when present
+/// - falls back to the normal boot mode when no explicit marker is present
 /// - runs a small runtime initialization sequence
 /// - optionally runs a controlled exception test
 /// - returns success to UEFI
 pub fn run() -> Status {
-    run_with_mode(Mode::Normal)
+    run_with_mode(selected_mode())
 }
 
 /// Runs the early boot flow with an explicit boot mode.
@@ -110,6 +112,60 @@ fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::panic::init());
     crate::console::write_line(crate::IDLE_READY_MESSAGE);
     crate::console::write_line(crate::RUNTIME_INIT_COMPLETE_MESSAGE);
+}
+
+/// Returns the selected boot mode for the current boot.
+///
+/// This keeps boot-mode selection minimal:
+/// - use a dedicated startup-script marker file when it is present
+/// - otherwise fall back to the normal boot mode
+fn selected_mode() -> Mode {
+    #[cfg(target_os = "uefi")]
+    {
+        if exception_test_marker_present() {
+            return Mode::ExceptionTest;
+        }
+    }
+
+    Mode::Normal
+}
+
+/// Returns whether the dedicated exception-test marker file is present.
+#[cfg(target_os = "uefi")]
+fn exception_test_marker_present() -> bool {
+    use uefi::boot;
+    use uefi::cstr16;
+    use uefi::proto::loaded_image::LoadedImage;
+    use uefi::proto::media::file::{File, FileAttribute, FileMode};
+    use uefi::proto::media::fs::SimpleFileSystem;
+
+    let handle = boot::image_handle();
+    let loaded_image = match boot::open_protocol_exclusive::<LoadedImage>(handle) {
+        Ok(loaded_image) => loaded_image,
+        Err(_) => return false,
+    };
+
+    let device = match loaded_image.device() {
+        Some(device) => device,
+        None => return false,
+    };
+
+    let mut file_system = match boot::open_protocol_exclusive::<SimpleFileSystem>(device) {
+        Ok(file_system) => file_system,
+        Err(_) => return false,
+    };
+
+    let mut root = match file_system.open_volume() {
+        Ok(root) => root,
+        Err(_) => return false,
+    };
+
+    root.open(
+        cstr16!(r"\rustos-exception-test"),
+        FileMode::Read,
+        FileAttribute::empty(),
+    )
+    .is_ok()
 }
 
 /// Returns the plain-language label for the selected boot mode.
