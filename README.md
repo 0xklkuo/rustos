@@ -57,7 +57,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone U4 — real memory foundation
+- Milestone U5 — paging and heap direction
 
 ## Roadmap
 
@@ -67,6 +67,7 @@ See:
 - `docs/unix-like.md`
 - `docs/testing.md`
 - `docs/blog-os-adoption.md`
+- `docs/paging.md`
 - `docs/decisions/0001-target-platform.md`
 
 ## Local Development

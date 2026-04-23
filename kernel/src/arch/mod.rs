@@ -3,6 +3,10 @@
 //! This module keeps target-specific runtime groundwork separate from
 //! shared kernel logic. The current implementation stays intentionally
 //! small and delegates pure runtime state logic to `nucleus`.
+//!
+//! It also exposes the smallest architecture-facing paging probe boundary
+//! needed for the current U5 milestone without claiming real paging
+//! management yet.
 
 #[cfg(target_os = "uefi")]
 pub mod x86_64;
@@ -33,6 +37,25 @@ pub fn init_interrupts() {
 /// interrupt support.
 #[cfg(not(target_os = "uefi"))]
 pub fn init_interrupts() {}
+
+/// Returns whether a small architecture-facing paging probe is available for the current target.
+///
+/// This keeps the paging milestone narrow:
+/// - x86_64 UEFI builds can expose a real architecture hook
+/// - host-side builds still compile cleanly
+/// - full paging management remains deferred
+#[must_use]
+#[cfg(target_os = "uefi")]
+pub fn has_paging_probe() -> bool {
+    x86_64::has_paging_probe()
+}
+
+/// Returns whether a small architecture-facing paging probe is available on non-UEFI builds.
+#[must_use]
+#[cfg(not(target_os = "uefi"))]
+pub fn has_paging_probe() -> bool {
+    false
+}
 
 /// Returns whether real exception handlers are installed for the current target.
 #[must_use]

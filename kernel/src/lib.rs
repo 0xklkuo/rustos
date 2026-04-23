@@ -12,6 +12,7 @@ pub mod boot;
 pub mod console;
 pub mod interrupt;
 pub mod memory;
+pub mod paging;
 pub mod panic;
 
 /// Deterministic boot message printed during early startup.
@@ -121,6 +122,18 @@ pub const FRAME_ALLOCATOR_SEED_PENDING_MESSAGE: &str = "rustos: frame allocator 
 
 /// Runtime log message printed when the frame allocator seed is ready.
 pub const FRAME_ALLOCATOR_SEED_READY_MESSAGE: &str = "rustos: frame allocator seed ready";
+
+/// Runtime log message printed before paging groundwork begins.
+pub const PAGING_INIT_MESSAGE: &str = "rustos: paging init";
+
+/// Runtime log message printed when paging work is still deferred.
+pub const PAGING_INIT_DEFERRED_MESSAGE: &str = "rustos: paging deferred";
+
+/// Runtime log message printed when paging direction is defined.
+pub const PAGING_DIRECTION_DEFINED_MESSAGE: &str = "rustos: paging direction defined";
+
+/// Runtime log message printed when a small architecture-facing paging probe is ready.
+pub const PAGING_ARCH_PROBE_READY_MESSAGE: &str = "rustos: paging arch probe ready";
 
 /// Runtime log message printed when heap setup is still deferred.
 pub const HEAP_INIT_DEFERRED_MESSAGE: &str = "rustos: heap init deferred";

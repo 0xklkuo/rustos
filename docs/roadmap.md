@@ -371,20 +371,32 @@ Acceptance criteria:
 
 ### U5 — Paging and Heap Direction
 
-Status: documentation-only
+Status: minimal boundary in progress
 
-Goal: define the smallest useful paging and heap direction.
+Goal: define the smallest useful paging and heap direction without introducing premature allocator or page-table complexity.
 
 Deliverables:
 
 - paging direction notes
-- minimal paging groundwork
+- minimal host-testable paging helpers and state
+- minimal kernel paging boundary
+- small architecture-facing paging probe boundary
 - explicit heap strategy decision
 - allocator work only if justified by the code
+
+Current implementation status:
+
+- the project now has a real memory-map boundary and a minimal frame allocator seed direction from U4
+- U5 should build on that foundation by introducing the smallest explicit paging boundary in docs and code
+- paging work should remain direction-first and boundary-first, not page-table-management-first
+- heap support and allocator complexity remain intentionally deferred until a concrete subsystem requires them
 
 Acceptance criteria:
 
 - paging direction is documented clearly
+- host-testable paging helpers and state are small, explicit, and covered by unit tests
+- the kernel exposes a minimal paging subsystem boundary
+- the architecture layer exposes only a small paging-facing probe, not full paging management
 - paging groundwork is introduced only as needed
 - heap support remains deferred unless justified by a concrete need
 

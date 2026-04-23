@@ -108,6 +108,12 @@ fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::FRAME_ALLOCATOR_INIT_MESSAGE);
     crate::console::write_line(crate::memory::frame_allocator_seed_status(memory));
     crate::console::write_line(crate::memory::init_summary(memory));
+
+    crate::console::write_line(crate::PAGING_INIT_MESSAGE);
+    let paging = crate::paging::init();
+    crate::console::write_line(crate::paging::init_summary(paging));
+    crate::console::write_line(crate::paging::arch_probe_summary(paging));
+
     if memory.state().heap_strategy() == crate::memory::HeapStrategy::Deferred {
         crate::console::write_line(crate::HEAP_INIT_DEFERRED_MESSAGE);
     }

@@ -10,12 +10,13 @@
 //! - expose explicit handler state to the rest of the kernel
 //!
 //! The implementation stays intentionally narrow. It does not claim full
-//! interrupt or exception subsystem completeness.
+//! interrupt, exception, or paging subsystem completeness.
 
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use lazy_static::lazy_static;
 use x86_64::instructions::interrupts;
+use x86_64::registers::control::Cr3;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 lazy_static! {
@@ -38,6 +39,54 @@ pub struct HandlerState {
     idt_loaded: bool,
     breakpoint_handler_installed: bool,
     breakpoint_handler_reached: bool,
+}
+
+/// Small summary of the current x86_64 paging probe state.
+///
+/// This does not expose or modify page tables. It only records whether the
+/// current architecture can observe a minimal paging-facing runtime boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PagingProbeState {
+    paging_active: bool,
+    level_4_table_frame: u64,
+}
+
+impl PagingProbeState {
+    /// Creates an empty paging probe state.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            paging_active: false,
+            level_4_table_frame: 0,
+        }
+    }
+
+    /// Creates a paging probe state with an observed level-4 table frame.
+    #[must_use]
+    pub const fn active(level_4_table_frame: u64) -> Self {
+        Self {
+            paging_active: true,
+            level_4_table_frame,
+        }
+    }
+
+    /// Returns whether paging is active for the current runtime.
+    #[must_use]
+    pub const fn is_paging_active(self) -> bool {
+        self.paging_active
+    }
+
+    /// Returns the observed level-4 page-table frame start address.
+    #[must_use]
+    pub const fn level_4_table_frame(self) -> u64 {
+        self.level_4_table_frame
+    }
+}
+
+impl Default for PagingProbeState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl HandlerState {
@@ -143,6 +192,38 @@ pub fn trigger_breakpoint() {
     interrupts::int3();
 }
 
+/// Returns whether a minimal x86_64 paging probe is available.
+///
+/// For the current milestone, this is true because the architecture layer can
+/// observe the active level-4 page-table frame through `CR3` without taking
+/// ownership of page-table management.
+#[must_use]
+pub fn has_paging_probe() -> bool {
+    paging_probe_state().is_paging_active()
+}
+
+/// Returns a minimal x86_64 paging probe state.
+///
+/// This keeps the U5 milestone small:
+/// - observe whether paging is active through the current CR3 value
+/// - record the current level-4 page-table frame address
+/// - avoid modifying mappings or exposing page-table management yet
+#[must_use]
+pub fn paging_probe_state() -> PagingProbeState {
+    let (frame, _) = Cr3::read();
+    PagingProbeState::active(frame.start_address().as_u64())
+}
+
+/// Returns a short plain-language summary of the current paging probe state.
+#[must_use]
+pub const fn paging_probe_summary(state: PagingProbeState) -> &'static str {
+    if state.is_paging_active() {
+        "rustos: paging arch probe ready"
+    } else {
+        "rustos: paging deferred"
+    }
+}
+
 /// Returns a short plain-language summary of the current handler state.
 #[must_use]
 pub const fn handler_summary(state: HandlerState) -> &'static str {
@@ -161,7 +242,7 @@ extern "x86-interrupt" fn breakpoint_handler(_stack_frame: InterruptStackFrame) 
 
 #[cfg(test)]
 mod tests {
-    use super::{HandlerState, handler_summary};
+    use super::{HandlerState, PagingProbeState, handler_summary, paging_probe_summary};
 
     #[test]
     fn new_handler_state_starts_uninitialized() {
@@ -205,5 +286,31 @@ mod tests {
     #[test]
     fn default_handler_state_matches_new() {
         assert_eq!(HandlerState::default(), HandlerState::new());
+    }
+
+    #[test]
+    fn new_paging_probe_state_starts_empty() {
+        let state = PagingProbeState::new();
+
+        assert!(!state.is_paging_active());
+        assert_eq!(state.level_4_table_frame(), 0);
+        assert_eq!(paging_probe_summary(state), "rustos: paging deferred");
+    }
+
+    #[test]
+    fn active_paging_probe_state_reports_ready() {
+        let state = PagingProbeState::active(0x1000);
+
+        assert!(state.is_paging_active());
+        assert_eq!(state.level_4_table_frame(), 0x1000);
+        assert_eq!(
+            paging_probe_summary(state),
+            "rustos: paging arch probe ready"
+        );
+    }
+
+    #[test]
+    fn default_paging_probe_state_matches_new() {
+        assert_eq!(PagingProbeState::default(), PagingProbeState::new());
     }
 }
