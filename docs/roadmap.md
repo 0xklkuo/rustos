@@ -211,9 +211,9 @@ Deliverables:
 Current implementation status:
 
 - the current memory module exposes a small initialization state and a frame allocator skeleton through host-testable logic in `nucleus`
-- the project now also has a small host-testable discovered-memory summary type for descriptor counts, conventional-memory region counts, and conventional-memory bytes
+- the project now also has a small host-testable discovered-memory summary type for descriptor counts, conventional-memory region counts, conventional-memory bytes, and the first conventional memory range
 - the kernel memory path now reads real discovered memory information from the UEFI memory map at runtime
-- the project is beginning to connect the frame allocator direction to discovered conventional memory through a minimal frame allocator seed
+- the frame allocator direction now derives a minimal seed from the first real conventional memory range instead of only total conventional-memory bytes
 - memory-related boot output should stay explicit and plain-language so contributors can see what is initialized, what is discovered, and what is still deferred
 - allocator work should remain a documented decision first, and only become code if it is clearly needed by the next milestone
 
@@ -360,7 +360,7 @@ Current implementation status:
 
 - the project now has a small host-testable discovered-memory summary in `nucleus`
 - the kernel memory path now connects that summary to real UEFI memory-map discovery
-- the frame allocator direction is beginning to connect to discovered conventional memory through a minimal seed, without expanding into paging or heap work
+- the frame allocator direction now derives a minimal seed from the first discovered conventional memory range, without expanding into paging or heap work
 
 Acceptance criteria:
 

@@ -135,7 +135,9 @@ fn discover_memory() -> DiscoveredMemory {
         let bytes = descriptor.page_count * UEFI_PAGE_SIZE;
 
         if descriptor.ty == MemoryType::CONVENTIONAL {
-            discovered = discovered.record_conventional_region(bytes);
+            let start_frame = (descriptor.phys_start / UEFI_PAGE_SIZE) as usize;
+            let frame_count = descriptor.page_count as usize;
+            discovered = discovered.record_conventional_range(start_frame, frame_count, bytes);
         } else {
             discovered = discovered.record_descriptor();
         }

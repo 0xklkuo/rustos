@@ -539,6 +539,8 @@ pub mod memory {
         descriptor_count: usize,
         conventional_regions: usize,
         conventional_bytes: u64,
+        first_conventional_start_frame: usize,
+        first_conventional_frame_count: usize,
     }
 
     /// Small host-testable seed for the future frame allocator direction.
@@ -595,6 +597,8 @@ pub mod memory {
                 descriptor_count: 0,
                 conventional_regions: 0,
                 conventional_bytes: 0,
+                first_conventional_start_frame: 0,
+                first_conventional_frame_count: 0,
             }
         }
 
@@ -609,6 +613,8 @@ pub mod memory {
                 descriptor_count,
                 conventional_regions,
                 conventional_bytes,
+                first_conventional_start_frame: 0,
+                first_conventional_frame_count: 0,
             }
         }
 
@@ -637,7 +643,27 @@ pub mod memory {
                 descriptor_count: self.descriptor_count + 1,
                 conventional_regions: self.conventional_regions,
                 conventional_bytes: self.conventional_bytes,
+                first_conventional_start_frame: self.first_conventional_start_frame,
+                first_conventional_frame_count: self.first_conventional_frame_count,
             }
+        }
+
+        /// Returns the first conventional memory start frame, if known.
+        #[must_use]
+        pub const fn first_conventional_start_frame(self) -> usize {
+            self.first_conventional_start_frame
+        }
+
+        /// Returns the first conventional memory frame count, if known.
+        #[must_use]
+        pub const fn first_conventional_frame_count(self) -> usize {
+            self.first_conventional_frame_count
+        }
+
+        /// Returns whether the first conventional memory range is known.
+        #[must_use]
+        pub const fn has_first_conventional_range(self) -> bool {
+            self.first_conventional_frame_count > 0
         }
 
         /// Returns a new summary after recording one conventional region.
@@ -647,6 +673,35 @@ pub mod memory {
                 descriptor_count: self.descriptor_count + 1,
                 conventional_regions: self.conventional_regions + 1,
                 conventional_bytes: self.conventional_bytes + bytes,
+                first_conventional_start_frame: self.first_conventional_start_frame,
+                first_conventional_frame_count: self.first_conventional_frame_count,
+            }
+        }
+
+        /// Returns a new summary after recording one conventional region with an explicit frame range.
+        #[must_use]
+        pub const fn record_conventional_range(
+            self,
+            start_frame: usize,
+            frame_count: usize,
+            bytes: u64,
+        ) -> Self {
+            let has_first_range = self.has_first_conventional_range();
+
+            Self {
+                descriptor_count: self.descriptor_count + 1,
+                conventional_regions: self.conventional_regions + 1,
+                conventional_bytes: self.conventional_bytes + bytes,
+                first_conventional_start_frame: if has_first_range {
+                    self.first_conventional_start_frame
+                } else {
+                    start_frame
+                },
+                first_conventional_frame_count: if has_first_range {
+                    self.first_conventional_frame_count
+                } else {
+                    frame_count
+                },
             }
         }
     }
@@ -721,12 +776,13 @@ pub mod memory {
     /// - derive the frame count from the discovered conventional bytes
     #[must_use]
     pub const fn frame_allocator_seed(memory: DiscoveredMemory) -> FrameAllocatorSeed {
-        const FRAME_SIZE: u64 = 4096;
-
-        if memory.conventional_bytes() < FRAME_SIZE {
-            FrameAllocatorSeed::new()
+        if memory.has_first_conventional_range() {
+            FrameAllocatorSeed::from_range(
+                memory.first_conventional_start_frame(),
+                memory.first_conventional_frame_count(),
+            )
         } else {
-            FrameAllocatorSeed::from_range(0, (memory.conventional_bytes() / FRAME_SIZE) as usize)
+            FrameAllocatorSeed::new()
         }
     }
 
@@ -897,6 +953,8 @@ pub mod memory {
             assert_eq!(memory.descriptor_count(), 2);
             assert_eq!(memory.conventional_regions(), 1);
             assert_eq!(memory.conventional_bytes(), 4096);
+            assert_eq!(memory.first_conventional_start_frame(), 0);
+            assert_eq!(memory.first_conventional_frame_count(), 0);
             assert_eq!(
                 discovered_memory_summary(memory),
                 "rustos: discovered conventional memory"
@@ -910,6 +968,8 @@ pub mod memory {
             assert_eq!(memory.descriptor_count(), 4);
             assert_eq!(memory.conventional_regions(), 2);
             assert_eq!(memory.conventional_bytes(), 8192);
+            assert_eq!(memory.first_conventional_start_frame(), 0);
+            assert_eq!(memory.first_conventional_frame_count(), 0);
             assert_eq!(
                 discovered_memory_summary(memory),
                 "rustos: discovered conventional memory"
@@ -941,10 +1001,10 @@ pub mod memory {
 
         #[test]
         fn frame_allocator_seed_derives_frame_count_from_conventional_memory() {
-            let memory = DiscoveredMemory::from_counts(4, 2, 8192);
+            let memory = DiscoveredMemory::new().record_conventional_range(16, 2, 8192);
             let seed = frame_allocator_seed(memory);
 
-            assert_eq!(seed.start_frame(), 0);
+            assert_eq!(seed.start_frame(), 16);
             assert_eq!(seed.frame_count(), 2);
             assert!(!seed.is_empty());
             assert_eq!(
@@ -963,6 +1023,19 @@ pub mod memory {
                 frame_allocator_seed_summary(seed),
                 "rustos: frame allocator seed pending"
             );
+        }
+
+        #[test]
+        fn discovered_memory_records_first_conventional_range_once() {
+            let memory = DiscoveredMemory::new();
+            let memory = memory.record_conventional_range(8, 4, 16384);
+            let memory = memory.record_conventional_range(32, 2, 8192);
+
+            assert!(memory.has_first_conventional_range());
+            assert_eq!(memory.first_conventional_start_frame(), 8);
+            assert_eq!(memory.first_conventional_frame_count(), 4);
+            assert_eq!(memory.conventional_regions(), 2);
+            assert_eq!(memory.conventional_bytes(), 24576);
         }
     }
 }
