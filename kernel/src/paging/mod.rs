@@ -68,9 +68,17 @@ pub fn init() -> InitResult {
 }
 
 /// Returns a small plain-language summary of the current paging state.
+///
+/// This summary reports the subsystem direction first, even when the
+/// architecture-facing probe is also ready. That keeps the boot log explicit:
+/// - paging direction is defined
+/// - architecture-facing probe readiness is reported separately
 #[must_use]
 pub const fn init_summary(result: InitResult) -> &'static str {
-    state_summary(result.state())
+    match result.state() {
+        State::Deferred => crate::PAGING_INIT_DEFERRED_MESSAGE,
+        State::DirectionDefined | State::ArchProbeReady => crate::PAGING_DIRECTION_DEFINED_MESSAGE,
+    }
 }
 
 /// Returns a small plain-language summary of the current architecture-facing
@@ -111,7 +119,10 @@ mod tests {
 
         assert_eq!(result.state(), State::ArchProbeReady);
         assert!(result.is_arch_probe_ready());
-        assert_eq!(init_summary(result), crate::PAGING_ARCH_PROBE_READY_MESSAGE);
+        assert_eq!(
+            init_summary(result),
+            crate::PAGING_DIRECTION_DEFINED_MESSAGE
+        );
         assert_eq!(
             arch_probe_summary(result),
             crate::PAGING_ARCH_PROBE_READY_MESSAGE
