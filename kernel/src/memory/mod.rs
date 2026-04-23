@@ -88,6 +88,18 @@ pub const fn discovered_summary(result: InitResult) -> &'static str {
     discovered_memory_summary(result.discovered())
 }
 
+/// Returns a small plain-language summary of the first conventional memory range.
+#[must_use]
+pub const fn first_conventional_range_summary(result: InitResult) -> &'static str {
+    if result.discovered().has_first_conventional_range() {
+        crate::FIRST_CONVENTIONAL_RANGE_MESSAGE
+    } else if result.discovered().descriptor_count() > 0 {
+        crate::DISCOVERED_MEMORY_MAP_MESSAGE
+    } else {
+        crate::DISCOVERED_MEMORY_PENDING_MESSAGE
+    }
+}
+
 /// Returns a small plain-language summary of the current memory state.
 #[must_use]
 pub const fn init_summary(result: InitResult) -> &'static str {
@@ -116,6 +128,19 @@ pub const fn discovered_memory_counts(memory: DiscoveredMemory) -> &'static str 
 #[must_use]
 pub const fn frame_allocator_seed_status(result: InitResult) -> &'static str {
     if result.frame_allocator_seed().is_empty() {
+        crate::FRAME_ALLOCATOR_SEED_PENDING_MESSAGE
+    } else {
+        crate::FRAME_ALLOCATOR_SEED_READY_MESSAGE
+    }
+}
+
+/// Returns a small plain-language summary of the first conventional memory range
+/// and the derived frame allocator seed.
+#[must_use]
+pub const fn frame_allocator_seed_range_summary(result: InitResult) -> &'static str {
+    let seed = result.frame_allocator_seed();
+
+    if seed.is_empty() {
         crate::FRAME_ALLOCATOR_SEED_PENDING_MESSAGE
     } else {
         crate::FRAME_ALLOCATOR_SEED_READY_MESSAGE

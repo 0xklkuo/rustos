@@ -161,7 +161,6 @@ Memory management foundation:
 - real memory map discovery through UEFI
 - a small discovered-memory summary
 - a minimal frame allocator seed derived from the first discovered conventional memory range
-- frame allocator skeleton
 - explicit memory subsystem state
 - heap strategy decision
 - minimal allocator only if justified
@@ -201,10 +200,14 @@ For Milestone 5, the memory module should become more explicit without pretendin
 - whether a real UEFI memory map has been discovered
 - what memory information is currently known
 - what minimal frame allocator seed can be derived from the first discovered conventional memory range
-- where a future frame allocator will live
 - whether heap support exists yet
 
-This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code. The first real memory milestone should focus on discovering and summarizing the UEFI memory map in plain language, then deriving the smallest useful frame allocator seed from the first discovered conventional memory range before introducing paging or allocation policy.
+This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code. The completed U4 memory-foundation milestone now covers:
+- real UEFI memory map discovery
+- a small discovered-memory summary
+- a minimal frame allocator seed derived from the first discovered conventional memory range
+
+Paging, real frame allocation behavior, and heap policy should remain deferred until a later milestone introduces a concrete need for them.
 
 ## Boot Strategy
 
@@ -295,7 +298,6 @@ As memory groundwork is added, the memory path should remain equally explicit. E
 - real UEFI memory map discovery
 - a small discovered-memory summary
 - a minimal frame allocator seed derived from the first discovered conventional memory range
-- frame allocator placeholder
 - heap support status
 - clear reporting of what is initialized versus deferred
 
@@ -304,7 +306,7 @@ This keeps the memory subsystem understandable and prevents the project from dri
 The same reporting rule should apply across the kernel foundation milestones:
 - Milestones 0 through 3 should describe repository, workflow, and structural progress plainly
 - Milestone 4 should describe the real breakpoint-handler path as implemented, while timer and broader interrupt work should still be described as groundwork
-- Milestone 5 should describe memory work as discovered-state groundwork once real UEFI memory-map integration exists, while frame allocation and heap support remain intentionally minimal
+- Milestone 5 should describe memory work as a completed real-memory-foundation milestone once real UEFI memory-map integration and first-range frame allocator seeding exist, while real frame allocation and heap support remain intentionally deferred
 - Milestone 6 should describe Unix-like direction as documentation-first until small kernel interfaces are actually implemented
 
 This keeps the architecture notes aligned with the real implementation state and supports contributor trust.

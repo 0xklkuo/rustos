@@ -197,7 +197,7 @@ Acceptance criteria:
 
 ### Milestone 5 — Memory Management Foundation
 
-Status: in progress
+Status: complete enough for the current milestone
 
 Goal: introduce the smallest useful memory subsystem.
 
@@ -214,8 +214,8 @@ Current implementation status:
 - the project now also has a small host-testable discovered-memory summary type for descriptor counts, conventional-memory region counts, conventional-memory bytes, and the first conventional memory range
 - the kernel memory path now reads real discovered memory information from the UEFI memory map at runtime
 - the frame allocator direction now derives a minimal seed from the first real conventional memory range instead of only total conventional-memory bytes
-- memory-related boot output should stay explicit and plain-language so contributors can see what is initialized, what is discovered, and what is still deferred
-- allocator work should remain a documented decision first, and only become code if it is clearly needed by the next milestone
+- memory-related boot output stays explicit and plain-language so contributors can see what is initialized, what is discovered, and what is still deferred
+- this milestone is complete enough for the current stage because real memory discovery and minimal frame allocator seeding now exist, while paging and heap support remain intentionally deferred
 
 Acceptance criteria:
 
@@ -346,7 +346,7 @@ Acceptance criteria:
 
 ### U4 — Real Memory Foundation
 
-Status: in progress
+Status: complete enough for the current milestone
 
 Goal: move from placeholder memory state to real discovered memory information.
 
@@ -361,6 +361,7 @@ Current implementation status:
 - the project now has a small host-testable discovered-memory summary in `nucleus`
 - the kernel memory path now connects that summary to real UEFI memory-map discovery
 - the frame allocator direction now derives a minimal seed from the first discovered conventional memory range, without expanding into paging or heap work
+- this milestone is complete enough for the current stage because the project now has a real memory-map boundary and a minimal allocator seed direction backed by discovered memory information
 
 Acceptance criteria:
 
