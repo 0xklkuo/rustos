@@ -541,6 +541,16 @@ pub mod memory {
         conventional_bytes: u64,
     }
 
+    /// Small host-testable seed for the future frame allocator direction.
+    ///
+    /// This type does not allocate frames yet. It only records the smallest
+    /// useful information derived from discovered conventional memory.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct FrameAllocatorSeed {
+        start_frame: usize,
+        frame_count: usize,
+    }
+
     impl State {
         /// Creates a new uninitialized memory state.
         #[must_use]
@@ -647,6 +657,50 @@ pub mod memory {
         }
     }
 
+    impl FrameAllocatorSeed {
+        /// Creates an empty frame allocator seed.
+        #[must_use]
+        pub const fn new() -> Self {
+            Self {
+                start_frame: 0,
+                frame_count: 0,
+            }
+        }
+
+        /// Creates a frame allocator seed with explicit values.
+        #[must_use]
+        pub const fn from_range(start_frame: usize, frame_count: usize) -> Self {
+            Self {
+                start_frame,
+                frame_count,
+            }
+        }
+
+        /// Returns the first frame index in the seed.
+        #[must_use]
+        pub const fn start_frame(self) -> usize {
+            self.start_frame
+        }
+
+        /// Returns the number of frames in the seed.
+        #[must_use]
+        pub const fn frame_count(self) -> usize {
+            self.frame_count
+        }
+
+        /// Returns whether the seed contains any frames.
+        #[must_use]
+        pub const fn is_empty(self) -> bool {
+            self.frame_count == 0
+        }
+    }
+
+    impl Default for FrameAllocatorSeed {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     /// Returns a small plain-language summary of discovered memory information.
     #[must_use]
     pub const fn discovered_memory_summary(memory: DiscoveredMemory) -> &'static str {
@@ -656,6 +710,33 @@ pub mod memory {
             "rustos: discovered memory map"
         } else {
             "rustos: discovered memory pending"
+        }
+    }
+
+    /// Returns a minimal frame allocator seed derived from discovered memory.
+    ///
+    /// The current rule is intentionally small:
+    /// - if no conventional memory is known, return an empty seed
+    /// - otherwise start at frame 0
+    /// - derive the frame count from the discovered conventional bytes
+    #[must_use]
+    pub const fn frame_allocator_seed(memory: DiscoveredMemory) -> FrameAllocatorSeed {
+        const FRAME_SIZE: u64 = 4096;
+
+        if memory.conventional_bytes() < FRAME_SIZE {
+            FrameAllocatorSeed::new()
+        } else {
+            FrameAllocatorSeed::from_range(0, (memory.conventional_bytes() / FRAME_SIZE) as usize)
+        }
+    }
+
+    /// Returns a small plain-language summary of the current frame allocator seed.
+    #[must_use]
+    pub const fn frame_allocator_seed_summary(seed: FrameAllocatorSeed) -> &'static str {
+        if seed.is_empty() {
+            "rustos: frame allocator seed pending"
+        } else {
+            "rustos: frame allocator seed ready"
         }
     }
 
@@ -748,8 +829,9 @@ pub mod memory {
     #[cfg(test)]
     mod tests {
         use super::{
-            DiscoveredMemory, FrameAllocator, HeapStrategy, State, discovered_memory_summary,
-            frame_allocator, init, is_initialized, state_summary,
+            DiscoveredMemory, FrameAllocator, FrameAllocatorSeed, HeapStrategy, State,
+            discovered_memory_summary, frame_allocator, frame_allocator_seed,
+            frame_allocator_seed_summary, init, is_initialized, state_summary,
         };
 
         #[test]
@@ -841,6 +923,45 @@ pub mod memory {
             assert_eq!(
                 discovered_memory_summary(memory),
                 "rustos: discovered memory map"
+            );
+        }
+
+        #[test]
+        fn frame_allocator_seed_starts_empty() {
+            let seed = FrameAllocatorSeed::new();
+
+            assert_eq!(seed.start_frame(), 0);
+            assert_eq!(seed.frame_count(), 0);
+            assert!(seed.is_empty());
+            assert_eq!(
+                frame_allocator_seed_summary(seed),
+                "rustos: frame allocator seed pending"
+            );
+        }
+
+        #[test]
+        fn frame_allocator_seed_derives_frame_count_from_conventional_memory() {
+            let memory = DiscoveredMemory::from_counts(4, 2, 8192);
+            let seed = frame_allocator_seed(memory);
+
+            assert_eq!(seed.start_frame(), 0);
+            assert_eq!(seed.frame_count(), 2);
+            assert!(!seed.is_empty());
+            assert_eq!(
+                frame_allocator_seed_summary(seed),
+                "rustos: frame allocator seed ready"
+            );
+        }
+
+        #[test]
+        fn frame_allocator_seed_stays_empty_without_full_frame() {
+            let memory = DiscoveredMemory::from_counts(1, 1, 2048);
+            let seed = frame_allocator_seed(memory);
+
+            assert_eq!(seed, FrameAllocatorSeed::new());
+            assert_eq!(
+                frame_allocator_seed_summary(seed),
+                "rustos: frame allocator seed pending"
             );
         }
     }

@@ -6,16 +6,17 @@
 //! milestone.
 
 pub use nucleus::memory::{
-    DiscoveredMemory, FrameAllocator, HeapStrategy, State, discovered_memory_summary,
-    frame_allocator, init as init_state, is_initialized, state_summary,
+    DiscoveredMemory, FrameAllocator, FrameAllocatorSeed, HeapStrategy, State,
+    discovered_memory_summary, frame_allocator, frame_allocator_seed, frame_allocator_seed_summary,
+    init as init_state, is_initialized, state_summary,
 };
 
-#[cfg(target_os = "uefi")]
-use uefi::MemoryType;
 #[cfg(target_os = "uefi")]
 use uefi::boot;
 #[cfg(target_os = "uefi")]
 use uefi::mem::memory_map::MemoryMap;
+#[cfg(target_os = "uefi")]
+use uefi::mem::memory_map::MemoryType;
 
 #[cfg(target_os = "uefi")]
 const UEFI_PAGE_SIZE: u64 = 4096;
@@ -30,13 +31,22 @@ const UEFI_PAGE_SIZE: u64 = 4096;
 pub struct InitResult {
     state: State,
     discovered: DiscoveredMemory,
+    frame_allocator_seed: FrameAllocatorSeed,
 }
 
 impl InitResult {
     /// Creates a new memory initialization result.
     #[must_use]
-    pub const fn new(state: State, discovered: DiscoveredMemory) -> Self {
-        Self { state, discovered }
+    pub const fn new(
+        state: State,
+        discovered: DiscoveredMemory,
+        frame_allocator_seed: FrameAllocatorSeed,
+    ) -> Self {
+        Self {
+            state,
+            discovered,
+            frame_allocator_seed,
+        }
     }
 
     /// Returns the current memory subsystem state.
@@ -50,6 +60,12 @@ impl InitResult {
     pub const fn discovered(self) -> DiscoveredMemory {
         self.discovered
     }
+
+    /// Returns the minimal frame allocator seed derived from discovered memory.
+    #[must_use]
+    pub const fn frame_allocator_seed(self) -> FrameAllocatorSeed {
+        self.frame_allocator_seed
+    }
 }
 
 /// Performs the current memory initialization step.
@@ -61,8 +77,9 @@ impl InitResult {
 pub fn init() -> InitResult {
     let state = init_state();
     let discovered = discover_memory();
+    let frame_allocator_seed = frame_allocator_seed(discovered);
 
-    InitResult::new(state, discovered)
+    InitResult::new(state, discovered, frame_allocator_seed)
 }
 
 /// Returns a small plain-language summary of discovered memory information.
@@ -92,6 +109,16 @@ pub const fn discovered_memory_counts(memory: DiscoveredMemory) -> &'static str 
         crate::DISCOVERED_MEMORY_MAP_MESSAGE
     } else {
         crate::DISCOVERED_MEMORY_PENDING_MESSAGE
+    }
+}
+
+/// Returns a small plain-language summary of the current frame allocator seed.
+#[must_use]
+pub const fn frame_allocator_seed_status(result: InitResult) -> &'static str {
+    if result.frame_allocator_seed().is_empty() {
+        crate::FRAME_ALLOCATOR_SEED_PENDING_MESSAGE
+    } else {
+        crate::FRAME_ALLOCATOR_SEED_READY_MESSAGE
     }
 }
 

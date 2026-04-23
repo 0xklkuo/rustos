@@ -160,6 +160,7 @@ Core runtime groundwork:
 Memory management foundation:
 - real memory map discovery through UEFI
 - a small discovered-memory summary
+- a minimal frame allocator seed derived from discovered conventional memory
 - frame allocator skeleton
 - explicit memory subsystem state
 - heap strategy decision
@@ -199,10 +200,11 @@ For Milestone 5, the memory module should become more explicit without pretendin
 - whether memory initialization has happened
 - whether a real UEFI memory map has been discovered
 - what memory information is currently known
+- what minimal frame allocator seed can be derived from discovered conventional memory
 - where a future frame allocator will live
 - whether heap support exists yet
 
-This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code. The first real memory milestone should focus on discovering and summarizing the UEFI memory map in plain language before introducing paging or allocation policy.
+This stage should still avoid premature paging abstractions, allocator frameworks, or architecture-general memory models that are not yet justified by the code. The first real memory milestone should focus on discovering and summarizing the UEFI memory map in plain language, then deriving the smallest useful frame allocator seed from that information before introducing paging or allocation policy.
 
 ## Boot Strategy
 
@@ -292,6 +294,7 @@ As memory groundwork is added, the memory path should remain equally explicit. E
 - memory subsystem state creation
 - real UEFI memory map discovery
 - a small discovered-memory summary
+- a minimal frame allocator seed derived from discovered conventional memory
 - frame allocator placeholder
 - heap support status
 - clear reporting of what is initialized versus deferred

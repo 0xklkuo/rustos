@@ -113,6 +113,12 @@ pub const DISCOVERED_CONVENTIONAL_MEMORY_MESSAGE: &str = "rustos: discovered con
 /// Runtime log message printed when frame allocator setup begins.
 pub const FRAME_ALLOCATOR_INIT_MESSAGE: &str = "rustos: frame allocator init";
 
+/// Runtime log message printed when the frame allocator seed is still pending.
+pub const FRAME_ALLOCATOR_SEED_PENDING_MESSAGE: &str = "rustos: frame allocator seed pending";
+
+/// Runtime log message printed when the frame allocator seed is ready.
+pub const FRAME_ALLOCATOR_SEED_READY_MESSAGE: &str = "rustos: frame allocator seed ready";
+
 /// Runtime log message printed when heap setup is still deferred.
 pub const HEAP_INIT_DEFERRED_MESSAGE: &str = "rustos: heap init deferred";
 

@@ -57,7 +57,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone U4 — real memory foundation
+- Milestone U4 — real memory foundation and frame allocator seed groundwork
 
 ## Roadmap
 
@@ -244,7 +244,7 @@ This is a bootable foundation with a real breakpoint-first exception path and ea
 - `test-exception` should be used when validating the controlled exception path separately from the normal boot smoke test.
 - the controlled exception path now uses a real breakpoint-handler milestone with a handler-originated success marker.
 - the exception smoke test validates explicit exception-mode boot selection and the real breakpoint handler path.
-- the next memory milestone should validate real UEFI memory-map discovery while keeping paging and heap support deferred.
+- the current memory milestone validates real UEFI memory-map discovery and now extends that groundwork with a minimal frame allocator seed derived from discovered conventional memory, while paging and heap support remain deferred.
 - nightly is currently required for that low-level handler boundary, so compatibility should be reviewed carefully whenever kernel exception dependencies change.
 - `test-unit` is intended for fast host-side feedback before running emulator-based validation.
 - Host-testable pure logic should prefer `nucleus/`, while firmware-facing runtime code should remain in `kernel/`.

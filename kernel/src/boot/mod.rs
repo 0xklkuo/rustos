@@ -105,6 +105,7 @@ fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::memory::discovered_summary(memory));
     crate::console::write_line(crate::memory::discovered_memory_counts(memory.discovered()));
     crate::console::write_line(crate::FRAME_ALLOCATOR_INIT_MESSAGE);
+    crate::console::write_line(crate::memory::frame_allocator_seed_status(memory));
     crate::console::write_line(crate::memory::init_summary(memory));
     if memory.state().heap_strategy() == crate::memory::HeapStrategy::Deferred {
         crate::console::write_line(crate::HEAP_INIT_DEFERRED_MESSAGE);
