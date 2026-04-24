@@ -61,9 +61,10 @@ pub const fn controlled_exception_success_marker(exception: ControlledException)
 
 /// Triggers the current controlled exception path.
 ///
-/// For the current milestone, this uses the real architecture-specific
-/// breakpoint path so the exception handler can be exercised explicitly and
-/// observed in bounded QEMU output.
+/// For the current implementation, this uses the real architecture-specific
+/// breakpoint path. Callers should only use this after the kernel has installed
+/// the real breakpoint handler path; otherwise the resulting CPU exception path
+/// is not guaranteed by this module.
 pub fn trigger_controlled_exception(exception: ControlledException) {
     match exception {
         ControlledException::Breakpoint => {
@@ -72,10 +73,11 @@ pub fn trigger_controlled_exception(exception: ControlledException) {
     }
 }
 
-/// Reports the controlled exception success marker for the current milestone.
+/// Reports the controlled exception success marker.
 ///
-/// This marker is emitted only when the real breakpoint handler has already
-/// been reached.
+/// This function emits output only when the real breakpoint handler has already
+/// been reached. If the handler has not run yet, this function is intentionally
+/// silent.
 pub fn report_controlled_exception(exception: ControlledException) {
     match exception {
         ControlledException::Breakpoint => {
@@ -86,7 +88,10 @@ pub fn report_controlled_exception(exception: ControlledException) {
     }
 }
 
-/// Returns whether the kernel has installed real exception handlers yet.
+/// Returns whether the kernel has installed the real breakpoint-handler path
+/// used by the current controlled exception flow.
+///
+/// This does not imply that broader exception coverage is complete.
 #[must_use]
 pub fn has_real_exception_handlers() -> bool {
     #[cfg(target_arch = "x86_64")]
@@ -103,9 +108,10 @@ pub fn has_real_exception_handlers() -> bool {
 /// Returns whether the current interrupt groundwork is ready enough for the
 /// early runtime sequence to continue.
 ///
-/// This is intentionally small for the current milestone. It gives the boot
-/// path a single explicit question to ask without exposing more policy than
-/// needed.
+/// The current readiness rule is intentionally narrow:
+/// - breakpoint groundwork must be ready
+/// - double-fault groundwork must be ready
+/// - timer interrupt groundwork must be ready
 #[must_use]
 pub const fn is_ready(state: State) -> bool {
     state.exceptions().is_breakpoint_ready()

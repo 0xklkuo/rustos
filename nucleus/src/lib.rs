@@ -771,9 +771,9 @@ pub mod memory {
     /// Returns a minimal frame allocator seed derived from discovered memory.
     ///
     /// The current rule is intentionally small:
-    /// - if no conventional memory is known, return an empty seed
-    /// - otherwise start at frame 0
-    /// - derive the frame count from the discovered conventional bytes
+    /// - if no first conventional memory range is known, return an empty seed
+    /// - otherwise use the first discovered conventional start frame
+    /// - use the first discovered conventional frame count
     #[must_use]
     pub const fn frame_allocator_seed(memory: DiscoveredMemory) -> FrameAllocatorSeed {
         if memory.has_first_conventional_range() {
@@ -1217,7 +1217,13 @@ pub mod paging {
         }
     }
 
-    /// Returns a minimal page range covering the given byte span.
+    /// Returns a minimal page range for the given byte count starting at the
+    /// address aligned down from `start`.
+    ///
+    /// The returned range:
+    /// - starts at `align_down(start)`
+    /// - uses a page count derived from `bytes`
+    /// - does not separately account for the offset from `start` into the first page
     #[must_use]
     pub const fn page_range(start: u64, bytes: u64) -> PageRange {
         PageRange::new(align_down(start), page_count_for_bytes(bytes))

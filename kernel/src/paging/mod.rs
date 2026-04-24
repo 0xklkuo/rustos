@@ -1,13 +1,14 @@
 //! Paging subsystem entry points for `rustos`.
 //!
-//! This module keeps the kernel-side paging boundary small and explicit.
+//! This module is the kernel-facing paging boundary.
 //! Host-testable paging state and helpers live in `nucleus`, while this module
-//! adds the smallest architecture-facing probe needed for the current U5
-//! milestone.
+//! adds the smallest architecture-facing probe needed by the kernel runtime.
 //!
-//! The current milestone does not implement page-table management, mapping, or
-//! heap-backed paging structures. It only makes the paging direction visible in
-//! code and boot logs.
+//! This module does not implement page-table management, mapping, or
+//! heap-backed paging structures. It exposes:
+//! - paging direction state
+//! - small paging helpers re-exported from `nucleus`
+//! - a narrow architecture-facing probe summary for boot-time reporting
 
 pub use nucleus::paging::{
     HeapStrategy, PageRange, PhysicalAddress, State, VirtualAddress, align_down, align_up,
@@ -17,10 +18,15 @@ pub use nucleus::paging::{
 
 /// Small kernel-side paging initialization result.
 ///
-/// This keeps the current milestone explicit:
-/// - host-testable paging state still comes from `nucleus`
-/// - the kernel adds only a minimal architecture-facing probe
-/// - real paging management remains deferred
+/// This type keeps the kernel-facing paging state explicit:
+/// - `state` reports the current paging direction
+/// - `arch_probe_ready` reports whether the architecture layer can observe a
+///   minimal paging-facing runtime boundary
+///
+/// When `arch_probe_ready` is `true`, `state` is expected to be
+/// `State::ArchProbeReady`.
+/// When `arch_probe_ready` is `false`, `state` is expected to remain at the
+/// direction-only level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InitResult {
     state: State,
@@ -52,9 +58,11 @@ impl InitResult {
 
 /// Performs the current paging initialization step.
 ///
-/// This keeps the U5 milestone intentionally small:
-/// - if an architecture-facing paging probe is available, report that boundary
-/// - otherwise report that paging direction is defined but deeper work is still deferred
+/// This function does not modify page tables or install mappings.
+/// It only reports the current kernel-facing paging boundary:
+/// - if an architecture-facing paging probe is available, return
+///   `State::ArchProbeReady`
+/// - otherwise return the direction-only paging state
 #[must_use]
 pub fn init() -> InitResult {
     let arch_probe_ready = crate::arch::has_paging_probe();
@@ -81,8 +89,12 @@ pub const fn init_summary(result: InitResult) -> &'static str {
     }
 }
 
-/// Returns a small plain-language summary of the current architecture-facing
-/// paging probe boundary.
+/// Returns a small plain-language summary of the architecture-facing paging
+/// probe boundary.
+///
+/// When the probe is ready, this returns the probe-ready message.
+/// When the probe is not ready, this falls back to the paging-direction message
+/// instead of a probe-specific deferred message.
 #[must_use]
 pub const fn arch_probe_summary(result: InitResult) -> &'static str {
     if result.is_arch_probe_ready() {

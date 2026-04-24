@@ -23,10 +23,12 @@ const UEFI_PAGE_SIZE: u64 = 4096;
 
 /// Small kernel-side memory initialization result.
 ///
-/// This keeps the current milestone explicit:
-/// - host-testable memory state still comes from `nucleus`
-/// - discovered memory information comes from the real UEFI memory map
-/// - heap support remains deferred
+/// This type keeps the kernel-facing memory boundary explicit:
+/// - `state` reports the current memory subsystem state
+/// - `discovered` summarizes memory information observed from the current boot
+/// - `frame_allocator_seed` is derived from `discovered`
+///
+/// The three fields are intended to describe one consistent initialization step.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InitResult {
     state: State,
@@ -70,9 +72,12 @@ impl InitResult {
 
 /// Performs the current memory initialization step.
 ///
-/// On the UEFI target, this reads the real firmware memory map and records a
-/// small discovered-memory summary. On non-UEFI builds, it falls back to the
-/// host-testable state only.
+/// On the UEFI target, this reads the current firmware memory map, records a
+/// small discovered-memory summary, and derives a frame-allocator seed from the
+/// first discovered conventional memory range.
+///
+/// On non-UEFI builds, discovered memory remains empty and the result falls
+/// back to the host-testable state.
 #[must_use]
 pub fn init() -> InitResult {
     let state = init_state();
@@ -82,7 +87,11 @@ pub fn init() -> InitResult {
     InitResult::new(state, discovered, frame_allocator_seed)
 }
 
-/// Returns a small plain-language summary of discovered memory information.
+/// Returns a coarse plain-language status label for discovered memory.
+///
+/// Despite the name, this function does not return numeric counts. It reports
+/// whether no memory information is known yet, whether a memory map has been
+/// discovered, or whether conventional memory has been discovered.
 #[must_use]
 pub const fn discovered_summary(result: InitResult) -> &'static str {
     discovered_memory_summary(result.discovered())
@@ -106,7 +115,11 @@ pub const fn init_summary(result: InitResult) -> &'static str {
     state_summary(result.state())
 }
 
-/// Returns the current discovered-memory summary without changing memory state.
+/// Returns the current discovered-memory summary without creating an
+/// `InitResult`.
+///
+/// Unlike `init`, this function performs discovery only and does not return the
+/// current memory subsystem state or a derived frame-allocator seed.
 #[must_use]
 pub fn discover() -> DiscoveredMemory {
     discover_memory()
@@ -134,8 +147,11 @@ pub const fn frame_allocator_seed_status(result: InitResult) -> &'static str {
     }
 }
 
-/// Returns a small plain-language summary of the first conventional memory range
-/// and the derived frame allocator seed.
+/// Returns a small plain-language summary of frame-allocator seed readiness.
+///
+/// Despite the name, this function does not describe the first conventional
+/// memory range directly. It reports only whether the derived seed is still
+/// pending or already ready.
 #[must_use]
 pub const fn frame_allocator_seed_range_summary(result: InitResult) -> &'static str {
     let seed = result.frame_allocator_seed();

@@ -2,11 +2,11 @@
 //!
 //! This module keeps the kernel-side syscall boundary small and explicit.
 //! Host-testable syscall logic lives in `nucleus`, while this module adds the
-//! smallest kernel-facing boundary needed for the current U6 milestone.
+//! smallest kernel-facing boundary needed for the current stage.
 //!
-//! The current milestone does not implement a real syscall ABI, trap entry, or
-//! user-mode transition. It only makes the syscall direction visible in code
-//! and boot logs.
+//! This module does not implement a real syscall ABI, trap entry, or user-mode
+//! transition. It defines a small kernel-facing syscall boundary and keeps
+//! runtime-facing summaries aligned with the kernel's log messages.
 
 pub use nucleus::syscall::{
     Error, Number, Request, Result, dispatch, number_summary, result_summary,
@@ -14,10 +14,9 @@ pub use nucleus::syscall::{
 
 /// Small kernel-side syscall initialization result.
 ///
-/// This keeps the current milestone explicit:
-/// - host-testable syscall logic still comes from `nucleus`
-/// - the kernel exposes only a minimal syscall boundary
-/// - real syscall entry and dispatch remain deferred
+/// This type reports whether the minimal syscall boundary is available to the
+/// rest of the kernel. It does not imply that a real syscall ABI or runtime
+/// trap path exists yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InitResult {
     boundary_ready: bool,
@@ -39,10 +38,8 @@ impl InitResult {
 
 /// Performs the current syscall initialization step.
 ///
-/// This keeps the U6 milestone intentionally small:
-/// - define the syscall direction explicitly
-/// - expose a minimal kernel boundary
-/// - defer real syscall ABI and dispatch work
+/// The current implementation only marks the minimal syscall boundary as ready.
+/// It does not install a real syscall entry path or runtime dispatcher.
 #[must_use]
 pub const fn init() -> InitResult {
     InitResult::new(true)
@@ -66,8 +63,8 @@ pub const fn boundary_summary(result: InitResult) -> &'static str {
 
 /// Returns a kernel-facing plain-language summary of the syscall number.
 ///
-/// This keeps kernel boot and runtime messages aligned with the constants
-/// defined in `kernel`.
+/// This helper is intended for kernel logs and other plain-language status
+/// output. It summarizes only the syscall kind, not any request arguments.
 #[must_use]
 pub const fn kernel_number_summary(number: Number) -> &'static str {
     match number {
@@ -79,8 +76,8 @@ pub const fn kernel_number_summary(number: Number) -> &'static str {
 
 /// Returns a kernel-facing plain-language summary of the syscall result.
 ///
-/// This keeps kernel boot and runtime messages aligned with the constants
-/// defined in `kernel`.
+/// This helper is intended for kernel logs and other plain-language status
+/// output. It summarizes only the result state, not the returned value.
 #[must_use]
 pub const fn kernel_result_summary(result: Result) -> &'static str {
     match result.error_kind() {
@@ -93,20 +90,19 @@ pub const fn kernel_result_summary(result: Result) -> &'static str {
 
 /// Returns a kernel-facing plain-language summary of the syscall request.
 ///
-/// This keeps kernel-facing syscall summaries small and explicit without
-/// implying a real syscall ABI or runtime dispatch path yet.
+/// This helper summarizes only the syscall number. It intentionally omits the
+/// handle and value fields so the kernel-facing summary stays small and stable.
 #[must_use]
 pub const fn kernel_request_summary(request: Request) -> &'static str {
     kernel_number_summary(request.number())
 }
 
-/// Dispatches a syscall request through the current tiny host-testable model
-/// and returns a kernel-facing plain-language summary of the result.
+/// Dispatches a syscall request through the current host-testable model and
+/// returns a kernel-facing plain-language summary of the result.
 ///
-/// This hook keeps the current U6.2 milestone intentionally small:
-/// - reuse the host-testable dispatch logic from `nucleus`
-/// - expose a tiny kernel-facing summary boundary
-/// - avoid introducing real syscall ABI wiring or runtime trap handling
+/// This helper does not expose the dispatched `Result` directly. It exists for
+/// kernel-facing status reporting while real syscall ABI wiring and runtime
+/// trap handling remain deferred.
 #[must_use]
 pub const fn dispatch_summary(request: Request) -> &'static str {
     kernel_result_summary(dispatch(request))

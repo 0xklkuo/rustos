@@ -20,7 +20,12 @@ pub fn init() -> Result<State, Status> {
         .map_err(|error| error.status())
 }
 
-/// Prints a single line to the early console.
+/// Prints a single line to the early UEFI console.
+///
+/// This function appends a trailing newline through the underlying console
+/// helper and does not report failures at this layer.
+///
+/// Callers should use this only after `init()` has completed successfully.
 pub fn write_line(message: &str) {
     println!("{message}");
 }

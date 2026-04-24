@@ -1,3 +1,9 @@
+//! Developer workflow entrypoint for `rustos`.
+//!
+//! This binary keeps common project tasks explicit and versioned with the
+//! repository. It is the main entrypoint for local validation, QEMU runs, and
+//! bounded smoke tests.
+
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fs;
@@ -22,6 +28,7 @@ const NORMAL_STARTUP_SCRIPT: &str =
 const EXCEPTION_TEST_STARTUP_SCRIPT: &str =
     "fs0:\r\necho exception-test > rustos-exception-test\r\nEFI\\BOOT\\BOOTX64.EFI\r\n";
 
+/// Parses the command line and dispatches to the selected `xtask` command.
 fn main() {
     let mut args = env::args_os();
     let _program = args.next();
@@ -54,10 +61,12 @@ fn main() {
     }
 }
 
+/// Runs workspace-wide `cargo check` for all targets.
 fn cmd_check() -> Result<(), String> {
     run_command("cargo", ["check", "--workspace", "--all-targets"])
 }
 
+/// Runs the local validation sequence intended to match CI closely.
 fn cmd_ci() -> Result<(), String> {
     cmd_fmt()?;
     cmd_lint()?;
@@ -75,10 +84,12 @@ fn cmd_ci() -> Result<(), String> {
     )
 }
 
+/// Checks workspace formatting with `rustfmt`.
 fn cmd_fmt() -> Result<(), String> {
     run_command("cargo", ["fmt", "--all", "--", "--check"])
 }
 
+/// Runs `clippy` for the workspace with warnings denied.
 fn cmd_lint() -> Result<(), String> {
     run_command(
         "cargo",
@@ -93,6 +104,10 @@ fn cmd_lint() -> Result<(), String> {
     )
 }
 
+/// Builds the UEFI binary, prepares the EFI directory, and launches QEMU.
+///
+/// When `bounded_test_mode` is `true`, QEMU is run in bounded smoke-test mode
+/// and exits automatically after success or timeout.
 fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), String> {
     ensure_command_available("qemu-system-x86_64")?;
 
@@ -120,6 +135,10 @@ fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), Str
     }
 }
 
+/// Builds the UEFI binary and runs QEMU in bounded mode with a custom startup
+/// script and success marker.
+///
+/// This is used for narrow test flows such as the controlled exception path.
 fn cmd_run_with_marker(
     extra_args: Vec<OsString>,
     success_marker: &'static str,
@@ -147,11 +166,15 @@ fn cmd_run_with_marker(
     )
 }
 
+/// Runs the standard local test flow: host-side unit tests followed by the
+/// bounded QEMU boot smoke test.
 fn cmd_test(extra_args: Vec<OsString>) -> Result<(), String> {
     cmd_test_unit()?;
     cmd_run(extra_args, true)
 }
 
+/// Runs host-side unit tests for workspace crates, excluding the UEFI-facing
+/// `kernel` package.
 fn cmd_test_unit() -> Result<(), String> {
     run_command(
         "cargo",
@@ -159,6 +182,8 @@ fn cmd_test_unit() -> Result<(), String> {
     )
 }
 
+/// Runs the bounded exception smoke test using the dedicated exception-test
+/// startup script and success marker.
 fn cmd_test_exception() -> Result<(), String> {
     let extra_args = vec![OsString::from("-no-reboot")];
     cmd_run_with_marker(
@@ -168,6 +193,8 @@ fn cmd_test_exception() -> Result<(), String> {
     )
 }
 
+/// Builds the `kernel` package for the UEFI target and returns the expected EFI
+/// binary path.
 fn build_efi() -> Result<PathBuf, String> {
     run_command(
         "cargo",
@@ -196,6 +223,8 @@ fn build_efi() -> Result<PathBuf, String> {
     }
 }
 
+/// Copies the built EFI binary into the default removable-media boot path
+/// inside the prepared EFI directory.
 fn install_boot_file(kernel_efi: &Path, image_dir: &Path) -> Result<(), String> {
     let boot_path = image_dir.join(EFI_BOOT_PATH);
     let Some(parent) = boot_path.parent() else {
@@ -220,6 +249,8 @@ fn install_boot_file(kernel_efi: &Path, image_dir: &Path) -> Result<(), String> 
     Ok(())
 }
 
+/// Writes the startup script used by the UEFI shell and removes any stale
+/// exception marker file from the EFI directory.
 fn install_startup_script(image_dir: &Path, script_contents: &str) -> Result<(), String> {
     let startup_script = image_dir.join(STARTUP_SCRIPT_PATH);
 
@@ -243,6 +274,8 @@ fn install_startup_script(image_dir: &Path, script_contents: &str) -> Result<(),
     Ok(())
 }
 
+/// Finds the UEFI firmware code file, using `RUSTOS_UEFI_CODE` when set and
+/// otherwise searching common host locations.
 fn find_firmware_code() -> Result<PathBuf, String> {
     if let Some(path) = env::var_os("RUSTOS_UEFI_CODE") {
         let path = PathBuf::from(path);
@@ -271,6 +304,8 @@ fn find_firmware_code() -> Result<PathBuf, String> {
     })
 }
 
+/// Prepares a writable firmware vars file in the artifacts directory and
+/// returns its path.
 fn prepare_firmware_vars(artifacts_dir: &Path) -> Result<PathBuf, String> {
     let source = find_firmware_vars_source()?;
     let destination = artifacts_dir.join("OVMF_VARS.fd");
@@ -297,6 +332,8 @@ fn prepare_firmware_vars(artifacts_dir: &Path) -> Result<PathBuf, String> {
     Ok(destination)
 }
 
+/// Finds the source UEFI firmware vars file, using `RUSTOS_UEFI_VARS` when set
+/// and otherwise searching common host locations.
 fn find_firmware_vars_source() -> Result<PathBuf, String> {
     if let Some(path) = env::var_os("RUSTOS_UEFI_VARS") {
         let path = PathBuf::from(path);
@@ -325,6 +362,7 @@ fn find_firmware_vars_source() -> Result<PathBuf, String> {
     })
 }
 
+/// Returns the first existing file from the provided candidate paths.
 fn find_first_existing_file(candidates: &[&str]) -> Option<PathBuf> {
     candidates
         .iter()
@@ -332,6 +370,7 @@ fn find_first_existing_file(candidates: &[&str]) -> Option<PathBuf> {
         .find(|path| path.is_file())
 }
 
+/// Launches QEMU interactively and waits for it to exit.
 fn run_qemu(
     firmware_code: &Path,
     firmware_vars: &Path,
@@ -350,6 +389,10 @@ fn run_qemu(
     }
 }
 
+/// Launches QEMU in bounded smoke-test mode and waits for either the expected
+/// success marker, process exit, or timeout.
+///
+/// The timeout can be overridden with `RUSTOS_QEMU_TIMEOUT_SECS`.
 fn run_qemu_bounded(
     firmware_code: &Path,
     firmware_vars: &Path,
@@ -441,6 +484,8 @@ fn run_qemu_bounded(
     }
 }
 
+/// Builds the base `qemu-system-x86_64` command used by both interactive and
+/// bounded run modes.
 fn qemu_command(
     firmware_code: &Path,
     firmware_vars: &Path,
@@ -475,6 +520,7 @@ fn qemu_command(
     command
 }
 
+/// Reads a captured QEMU output stream into a string.
 fn read_stream<R: Read>(mut reader: R) -> Result<String, String> {
     let mut output = String::new();
     reader
@@ -483,6 +529,7 @@ fn read_stream<R: Read>(mut reader: R) -> Result<String, String> {
     Ok(output)
 }
 
+/// Recreates a directory from scratch, removing any previous contents first.
 fn recreate_directory(path: &Path) -> Result<(), String> {
     if path.exists() {
         fs::remove_dir_all(path)
@@ -493,6 +540,8 @@ fn recreate_directory(path: &Path) -> Result<(), String> {
         .map_err(|error| format!("failed to create directory {}: {error}", path.display()))
 }
 
+/// Returns an error when the required external command is not available in
+/// `PATH`.
 fn ensure_command_available(program: &str) -> Result<(), String> {
     if command_exists(program) {
         Ok(())
@@ -503,6 +552,7 @@ fn ensure_command_available(program: &str) -> Result<(), String> {
     }
 }
 
+/// Returns whether the named command can be found in the current `PATH`.
 fn command_exists(program: &str) -> bool {
     let Some(paths) = env::var_os("PATH") else {
         return false;
@@ -511,6 +561,7 @@ fn command_exists(program: &str) -> bool {
     env::split_paths(&paths).any(|directory| executable_exists(&directory, program))
 }
 
+/// Returns whether the named executable exists in the given directory.
 fn executable_exists(directory: &Path, program: &str) -> bool {
     let candidate = directory.join(program);
     if candidate.is_file() {
@@ -529,6 +580,8 @@ fn executable_exists(directory: &Path, program: &str) -> bool {
     }
 }
 
+/// Returns the workspace root directory derived from the `xtask` manifest
+/// location.
 fn workspace_root() -> Result<PathBuf, String> {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest_dir
@@ -537,6 +590,7 @@ fn workspace_root() -> Result<PathBuf, String> {
         .ok_or_else(|| String::from("failed to determine workspace root"))
 }
 
+/// Runs an external command and returns an error when it exits unsuccessfully.
 fn run_command<I, S>(program: &str, args: I) -> Result<(), String>
 where
     I: IntoIterator<Item = S>,
@@ -554,6 +608,7 @@ where
     }
 }
 
+/// Prints command-line help for `xtask`.
 fn print_help() {
     eprintln!("rustos xtask");
     eprintln!();
