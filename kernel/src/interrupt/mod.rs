@@ -94,15 +94,7 @@ pub fn report_controlled_exception(exception: ControlledException) {
 /// This does not imply that broader exception coverage is complete.
 #[must_use]
 pub fn has_real_exception_handlers() -> bool {
-    #[cfg(target_arch = "x86_64")]
-    {
-        crate::arch::x86_64::has_real_breakpoint_handler()
-    }
-
-    #[cfg(not(target_arch = "x86_64"))]
-    {
-        false
-    }
+    crate::arch::has_real_exception_handlers()
 }
 
 /// Returns whether the current interrupt groundwork is ready enough for the
