@@ -8,7 +8,9 @@
 //! user-mode transition. It only makes the syscall direction visible in code
 //! and boot logs.
 
-pub use nucleus::syscall::{Error, Number, Result, number_summary, result_summary};
+pub use nucleus::syscall::{
+    Error, Number, Request, Result, dispatch, number_summary, result_summary,
+};
 
 /// Small kernel-side syscall initialization result.
 ///
@@ -89,13 +91,34 @@ pub const fn kernel_result_summary(result: Result) -> &'static str {
     }
 }
 
+/// Returns a kernel-facing plain-language summary of the syscall request.
+///
+/// This keeps kernel-facing syscall summaries small and explicit without
+/// implying a real syscall ABI or runtime dispatch path yet.
+#[must_use]
+pub const fn kernel_request_summary(request: Request) -> &'static str {
+    kernel_number_summary(request.number())
+}
+
+/// Dispatches a syscall request through the current tiny host-testable model
+/// and returns a kernel-facing plain-language summary of the result.
+///
+/// This hook keeps the current U6.2 milestone intentionally small:
+/// - reuse the host-testable dispatch logic from `nucleus`
+/// - expose a tiny kernel-facing summary boundary
+/// - avoid introducing real syscall ABI wiring or runtime trap handling
+#[must_use]
+pub const fn dispatch_summary(request: Request) -> &'static str {
+    kernel_result_summary(dispatch(request))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        InitResult, boundary_summary, init, init_summary, kernel_number_summary,
-        kernel_result_summary,
+        InitResult, boundary_summary, dispatch_summary, init, init_summary, kernel_number_summary,
+        kernel_request_summary, kernel_result_summary,
     };
-    use nucleus::syscall::{Error, Number, Result};
+    use nucleus::syscall::{Error, Number, Request, Result};
 
     #[test]
     fn init_reports_boundary_ready() {
@@ -144,6 +167,42 @@ mod tests {
         assert_eq!(
             kernel_result_summary(Result::error(Error::InvalidHandle)),
             crate::SYSCALL_INVALID_HANDLE_MESSAGE
+        );
+    }
+
+    #[test]
+    fn kernel_request_summary_matches_syscall_number() {
+        assert_eq!(
+            kernel_request_summary(Request::new(Number::Write, 1, 12)),
+            "rustos: syscall write"
+        );
+        assert_eq!(
+            kernel_request_summary(Request::new(Number::Exit, 0, 7)),
+            "rustos: syscall exit"
+        );
+        assert_eq!(
+            kernel_request_summary(Request::new(Number::Unknown(99), 0, 0)),
+            crate::SYSCALL_INVALID_NUMBER_MESSAGE
+        );
+    }
+
+    #[test]
+    fn dispatch_summary_matches_dispatched_result() {
+        assert_eq!(
+            dispatch_summary(Request::new(Number::Write, 1, 12)),
+            crate::SYSCALL_SUCCESS_MESSAGE
+        );
+        assert_eq!(
+            dispatch_summary(Request::new(Number::Write, 0, 12)),
+            crate::SYSCALL_INVALID_HANDLE_MESSAGE
+        );
+        assert_eq!(
+            dispatch_summary(Request::new(Number::Write, 1, 0)),
+            crate::SYSCALL_INVALID_ARGUMENT_MESSAGE
+        );
+        assert_eq!(
+            dispatch_summary(Request::new(Number::Unknown(99), 0, 0)),
+            crate::SYSCALL_INVALID_NUMBER_MESSAGE
         );
     }
 }
