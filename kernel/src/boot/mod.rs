@@ -204,6 +204,8 @@ fn run_exception_test() {
         exception,
     ));
 
+    crate::arch::init_interrupts();
+
     if !crate::interrupt::has_real_exception_handlers() {
         crate::console::write_line(crate::EXCEPTION_INIT_PENDING_MESSAGE);
         crate::console::write_line(crate::EXCEPTION_TEST_COMPLETE_MESSAGE);
