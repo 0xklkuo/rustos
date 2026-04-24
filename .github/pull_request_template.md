@@ -16,9 +16,12 @@
 
 <!-- Describe how you validated the change. If not tested, explain why. -->
 
-- [ ] `cargo fmt`
-- [ ] `cargo clippy --all-targets --all-features`
-- [ ] `cargo check --workspace`
+- [ ] `cargo run -p xtask -- fmt`
+- [ ] `cargo run -p xtask -- lint`
+- [ ] `cargo run -p xtask -- check`
+- [ ] `cargo run -p xtask -- test-unit`
+- [ ] `cargo run -p xtask -- test-qemu` if boot behavior changed
+- [ ] `cargo run -p xtask -- test-exception` if the controlled exception path changed
 - [ ] Other testing performed:
 
 ## Documentation

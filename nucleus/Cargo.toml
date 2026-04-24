@@ -3,6 +3,10 @@ name = "nucleus"
 version = "0.1.0"
 edition = "2024"
 publish = false
+description = "Host-testable pure logic shared with the rustos kernel"
+license = "MIT"
+repository = "https://github.com/0xklkuo/rustos"
+readme = "../README.md"
 
 [lib]
 path = "src/lib.rs"

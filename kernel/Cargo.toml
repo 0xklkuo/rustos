@@ -3,6 +3,10 @@ name = "kernel"
 version = "0.1.0"
 edition = "2024"
 publish = false
+description = "Firmware-facing kernel crate for the rustos educational operating system project"
+license = "MIT"
+repository = "https://github.com/0xklkuo/rustos"
+readme = "../README.md"
 
 [[bin]]
 name = "kernel"

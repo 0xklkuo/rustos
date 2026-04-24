@@ -8,10 +8,12 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 license = "MIT"
 publish = false
-authors = ["KL KUO <kl@klkuo@guru>"]
+authors = ["KL KUO <kl@klkuo.guru>"]
+repository = "https://github.com/0xklkuo/rustos"
+readme = "README.md"
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
