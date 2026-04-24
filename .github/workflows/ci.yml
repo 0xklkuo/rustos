@@ -115,8 +115,6 @@ jobs:
 
       - name: Run xtask test-qemu
         env:
-          RUSTOS_UEFI_CODE: /usr/share/OVMF/OVMF_CODE.fd
-          RUSTOS_UEFI_VARS: /usr/share/OVMF/OVMF_VARS.fd
           RUSTOS_QEMU_TIMEOUT_SECS: "20"
         run: cargo run -p xtask -- test-qemu
 
@@ -146,7 +144,5 @@ jobs:
 
       - name: Run xtask test-exception
         env:
-          RUSTOS_UEFI_CODE: /usr/share/OVMF/OVMF_CODE.fd
-          RUSTOS_UEFI_VARS: /usr/share/OVMF/OVMF_VARS.fd
           RUSTOS_QEMU_TIMEOUT_SECS: "20"
         run: cargo run -p xtask -- test-exception
