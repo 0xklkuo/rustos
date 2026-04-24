@@ -1,5 +1,7 @@
 # rustos
 
+[![CI](https://github.com/0xklkuo/rustos/actions/workflows/ci.yml/badge.svg)](https://github.com/0xklkuo/rustos/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/0xklkuo/rustos?label=release&sort=semver)](https://github.com/0xklkuo/rustos/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE) [![Rust nightly](https://img.shields.io/badge/rust-nightly-blue.svg)](./rust-toolchain.toml) [![Target: x86_64 UEFI](https://img.shields.io/badge/target-x86_64--unknown--uefi-blueviolet.svg)](./docs/decisions/0001-target-platform.md)
+
 `rustos` is a minimal, educational, and maintainable open-source project for learning Rust systems programming and modern operating system fundamentals by building a small OS from scratch.
 
 The project favors clarity over cleverness, small steps over large abstractions, and explicit design decisions over hidden complexity.
@@ -34,6 +36,47 @@ What works today:
 - prints deterministic boot and runtime logs
 - includes bounded QEMU smoke tests and host-side unit tests
 - keeps pure logic in `nucleus/` and firmware-facing runtime code in `kernel/`
+
+## Proof of Life
+
+A successful bounded QEMU boot currently looks like this:
+
+```text
+rustos: boot start
+rustos: hello from UEFI
+rustos: boot mode normal
+rustos: runtime init start
+rustos: console init complete
+rustos: arch init start
+x86_64
+arch runtime ready
+rustos: arch init complete
+rustos: exception init
+exception groundwork ready
+rustos: exception groundwork modeled
+rustos: interrupt init
+timer interrupt groundwork ready
+rustos: interrupt groundwork modeled
+rustos: timer init
+rustos: timer groundwork modeled
+rustos: memory init
+rustos: memory map init
+rustos: discovered conventional memory
+rustos: first conventional range discovered
+rustos: frame allocator init
+rustos: frame allocator seed ready
+rustos: memory foundation ready
+rustos: paging init
+rustos: paging direction defined
+rustos: paging arch probe ready
+rustos: heap init deferred
+rustos: syscall init
+rustos: syscall direction defined
+rustos: syscall boundary ready
+rustos: panic
+rustos: idle ready
+rustos: runtime init complete
+```
 
 ## Quick Start
 
@@ -95,6 +138,17 @@ Subsystem notes:
 - `docs/descriptors.md`
 - `docs/blog-os-adoption.md`
 - `docs/decisions/0001-target-platform.md`
+
+## Releases
+
+Release planning and release-facing changes are tracked in:
+
+- `CHANGELOG.md`
+- GitHub Releases
+
+The current release preparation target is:
+
+- `v0.1.0-alpha.1`
 
 ## Contributing
 

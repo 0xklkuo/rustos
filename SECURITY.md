@@ -63,8 +63,6 @@ Please include:
 
 Please keep reports concise, factual, and reproducible.
 
-If private vulnerability reporting is not available yet, wait to report sensitive details until a private GitHub-based reporting path is enabled. Non-sensitive questions or follow-up discussion can use the normal public project channels after sensitive details have been removed.
-
 ## What to Expect
 
 Because this is a small educational project, response times may vary.
