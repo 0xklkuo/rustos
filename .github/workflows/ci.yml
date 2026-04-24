@@ -51,8 +51,27 @@ jobs:
       - name: Run xtask lint
         run: cargo run -p xtask -- lint
 
+  check:
+    name: Workspace check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain with UEFI target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-uefi
+
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run xtask check
+        run: cargo run -p xtask -- check
+
   unit-test:
-    name: Unit and build checks
+    name: Unit tests
     runs-on: ubuntu-latest
 
     steps:
@@ -76,6 +95,7 @@ jobs:
     needs:
       - fmt
       - lint
+      - check
       - unit-test
 
     steps:
@@ -106,6 +126,7 @@ jobs:
     needs:
       - fmt
       - lint
+      - check
       - unit-test
 
     steps:
