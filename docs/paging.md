@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the paging direction for `rustos` during the current U5 milestone.
+This document defines the paging direction for `rustos`.
 
 The goal is to make the paging boundary explicit without pretending that full paging management already exists.
 
@@ -13,7 +13,9 @@ At this stage, `rustos` should:
 - expose a small code boundary for future paging work
 - keep heap and allocator complexity deferred
 
-This document is direction-first. It does not claim that `rustos` already manages page tables directly.
+This document is a design note, not a status report.
+
+For implementation status and milestone progress, see `docs/roadmap.md`.
 
 ## Why Paging Matters
 
@@ -26,65 +28,13 @@ Paging is a core part of a modern kernel because it shapes how the system thinks
 - task address-space direction
 - controlled access to mapped regions
 
-For `rustos`, paging is important because the project aims toward a small Unix-like kernel model with a clearer kernel and user boundary over time.
+For `rustos`, paging matters because the project aims toward a small Unix-like kernel model with a clearer kernel and user boundary over time.
 
-However, paging is also easy to overbuild too early.
-
-For the current milestone, the project should introduce only the smallest useful paging direction and code boundary.
-
-## Current Milestone Goal
-
-The current U5 goal is:
-
-- define paging clearly in documentation
-- add host-testable paging helpers and state
-- add a small kernel paging module boundary
-- add a minimal architecture-facing paging probe
-- keep heap support deferred
-- avoid allocator work unless a real need appears
-
-This means the milestone is about clarity and preparation, not full implementation.
-
-## What Exists Now
-
-For the current milestone, `rustos` may expose:
-
-- a small paging state model
-- simple page-alignment helpers
-- simple page-count helpers
-- a minimal page-range helper
-- a kernel paging entry module
-- a small architecture-facing paging probe on `x86_64`
-
-The architecture-facing probe is intentionally narrow.
-
-Its purpose is only to confirm that the kernel has a real architecture boundary where paging-related runtime observation can live later.
-
-It is not a page-table manager.
-
-It does not imply that `rustos` is already creating, editing, or switching page tables.
-
-## What Is Explicitly Deferred
-
-The following are intentionally deferred for now:
-
-- page-table management
-- mapping and unmapping APIs
-- higher-half kernel design decisions
-- user-space address-space creation
-- copy-in and copy-out helpers
-- page-fault handling as a paging milestone
-- heap-backed paging metadata
-- dynamic allocation for paging structures
-- allocator design work
-- global allocator setup
-- `alloc`-based kernel collections
-
-These are all valid future topics, but they should not be introduced before the project has a concrete need and a clear teaching value.
+At the same time, paging is easy to overbuild too early. The project should introduce only the smallest useful paging direction before taking ownership of more complex memory-management behavior.
 
 ## Minimal Paging Model
 
-The current paging model should stay intentionally small.
+The paging model should stay intentionally small.
 
 A practical minimal state shape is:
 
@@ -101,13 +51,13 @@ A practical minimal state shape is:
 - `ArchProbeReady`
   - the project has a small architecture-facing runtime hook for paging-related observation
 
-This keeps the milestone honest.
+This keeps the boundary honest.
 
-It avoids claiming that paging is fully initialized when the project has only defined the boundary.
+It avoids claiming that paging is fully initialized when the project has only defined the direction and a narrow architecture-facing probe.
 
 ## Address and Range Helpers
 
-The current milestone should prefer only small, host-testable helpers such as:
+The paging boundary should prefer only small, host-testable helpers such as:
 
 - `is_page_aligned`
 - `align_down`
@@ -128,11 +78,11 @@ They also fit the project rule of testing pure logic without requiring QEMU.
 
 The current `x86_64` paging hook should stay minimal.
 
-Its role is to answer a narrow question:
+Its role is to answer one narrow question:
 
 > does the architecture layer have a real place to observe paging-related runtime state?
 
-That is enough for this milestone.
+That is enough for this stage.
 
 The probe may observe a small piece of runtime paging state, but it should not:
 
@@ -141,7 +91,7 @@ The probe may observe a small piece of runtime paging state, but it should not:
 - introduce unsafe abstractions without need
 - force a page-table design too early
 
-This keeps the architecture boundary real without making the subsystem larger than the milestone requires.
+This keeps the architecture boundary real without making the subsystem larger than the project currently needs.
 
 ## Relationship to UEFI
 
@@ -149,7 +99,7 @@ This keeps the architecture boundary real without making the subsystem larger th
 
 That means the kernel begins execution in an environment where paging is already meaningful at the platform level, but the project does not need to take over paging management immediately.
 
-For the current milestone, the important rule is:
+The important rule is:
 
 - acknowledge the runtime paging context
 - define the kernel-side boundary clearly
@@ -159,7 +109,7 @@ This is more honest and more educational than pretending the kernel must immedia
 
 ## Heap Strategy
 
-The heap strategy for the current milestone is simple:
+The heap strategy for the current paging direction is simple:
 
 - heap support remains deferred
 
@@ -167,7 +117,7 @@ This is an intentional design choice.
 
 Paging work often leads projects to introduce allocation too early. `rustos` should avoid that.
 
-### Why Heap Remains Deferred
+### Why heap remains deferred
 
 Right now, the project does not yet need dynamic allocation for:
 
@@ -179,7 +129,7 @@ Right now, the project does not yet need dynamic allocation for:
 
 Adding heap support now would create complexity without solving a real problem.
 
-### Current Rule
+### Current rule
 
 Do not add heap or allocator work just because paging exists as a concept.
 
@@ -196,11 +146,70 @@ Until then, the correct strategy is still:
 
 - `Deferred`
 
+## What Is Explicitly Deferred
+
+The following are intentionally deferred for now:
+
+- page-table management
+- mapping and unmapping APIs
+- higher-half kernel design decisions
+- user-space address-space creation
+- copy-in and copy-out helpers
+- page-fault handling as a paging milestone
+- heap-backed paging metadata
+- dynamic allocation for paging structures
+- allocator design work
+- global allocator setup
+- `alloc`-based kernel collections
+
+These are all valid future topics, but they should not be introduced before the project has a concrete need and a clear teaching value.
+
+## Relationships to Other Boundaries
+
+Paging affects several other subsystem directions.
+
+### Memory
+
+Paging builds on the memory foundation, but it should not replace it.
+
+The memory boundary should remain responsible for:
+
+- discovered memory information
+- frame allocator direction
+- heap deferral
+
+The paging boundary should remain responsible for:
+
+- virtual-memory direction
+- page-alignment helpers
+- architecture-facing paging observation
+- future mapping direction
+
+### Syscalls
+
+Paging will eventually matter for:
+
+- user and kernel memory separation
+- pointer validation
+- copy-in and copy-out rules
+
+Those concerns should remain deferred until the syscall boundary becomes more concrete.
+
+### Tasks
+
+Paging will eventually matter for:
+
+- task address-space relationships
+- user-mode execution
+- memory ownership boundaries
+
+Those concerns should remain deferred until the task model grows beyond its current minimal state.
+
 ## Testing Direction
 
 Paging work should follow the existing project testing strategy.
 
-### Test on the Host First
+### Test on the host first
 
 Prefer unit tests for:
 
@@ -210,11 +219,11 @@ Prefer unit tests for:
 - paging state summaries
 - deferred heap strategy summaries
 
-### Use Emulator Tests only when Needed
+### Use emulator tests only when needed
 
 Do not add QEMU paging tests unless the kernel begins to change real runtime paging behavior in a meaningful and observable way.
 
-For the current milestone, host-side tests are the right default.
+For the current paging direction, host-side tests are the right default.
 
 ## Design Rules for Contributors
 
@@ -227,11 +236,11 @@ When extending paging work in `rustos`, follow these rules:
 5. keep architecture-specific code behind the architecture boundary
 6. document unsafe invariants clearly if low-level paging code is added later
 7. avoid copying a larger reference design mechanically
-8. make milestone claims match the real implementation
+8. make design claims match the real implementation
 
 ## What Future Paging Work Might Add
 
-Later milestones may introduce some of the following, if justified:
+Later work may introduce some of the following, if justified:
 
 - explicit page-table ownership rules
 - kernel mapping policy
@@ -245,7 +254,7 @@ These should be added only when the surrounding kernel design is ready.
 
 ## Decision Summary
 
-For the current `rustos` milestone, paging is:
+For `rustos`, paging is:
 
 - documented clearly
 - represented by a small code boundary
@@ -267,8 +276,11 @@ This keeps the project aligned with its core principles:
 
 ## Related Documents
 
-- `docs/roadmap.md`
 - `docs/architecture.md`
+- `docs/roadmap.md`
 - `docs/testing.md`
-- `docs/blog-os-adoption.md`
 - `docs/unix-like.md`
+- `docs/syscalls.md`
+- `docs/tasks.md`
+- `docs/descriptors.md`
+- `docs/blog-os-adoption.md`
