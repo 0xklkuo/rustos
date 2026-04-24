@@ -136,13 +136,14 @@ fn cmd_run(extra_args: Vec<OsString>, bounded_test_mode: bool) -> Result<(), Str
 }
 
 /// Builds the UEFI binary and runs QEMU in bounded mode with a custom startup
-/// script and success marker.
+/// script, optional boot marker file, and success marker.
 ///
 /// This is used for narrow test flows such as the controlled exception path.
 fn cmd_run_with_marker(
     extra_args: Vec<OsString>,
     success_marker: &'static str,
     startup_script: &str,
+    marker_file_contents: Option<&str>,
 ) -> Result<(), String> {
     ensure_command_available("qemu-system-x86_64")?;
 
@@ -153,6 +154,10 @@ fn cmd_run_with_marker(
     recreate_directory(&image_dir)?;
     install_boot_file(&kernel_efi, &image_dir)?;
     install_startup_script(&image_dir, startup_script)?;
+
+    if let Some(contents) = marker_file_contents {
+        install_marker_file(&image_dir, EXCEPTION_MARKER_PATH, contents)?;
+    }
 
     let firmware_code = find_firmware_code()?;
     let firmware_vars = prepare_firmware_vars(&artifacts_dir)?;
@@ -183,13 +188,14 @@ fn cmd_test_unit() -> Result<(), String> {
 }
 
 /// Runs the bounded exception smoke test using the dedicated exception-test
-/// startup script and success marker.
+/// startup script, a direct boot marker file, and the expected success marker.
 fn cmd_test_exception() -> Result<(), String> {
     let extra_args = vec![OsString::from("-no-reboot")];
     cmd_run_with_marker(
         extra_args,
         EXCEPTION_SUCCESS_MARKER,
         EXCEPTION_TEST_STARTUP_SCRIPT,
+        Some("exception-test\n"),
     )
 }
 
@@ -272,6 +278,21 @@ fn install_startup_script(image_dir: &Path, script_contents: &str) -> Result<(),
     }
 
     Ok(())
+}
+
+/// Writes a marker file directly into the EFI directory.
+///
+/// This is used for test flows that must work even when firmware boots the EFI
+/// binary directly instead of going through the UEFI shell startup script.
+fn install_marker_file(image_dir: &Path, marker_path: &str, contents: &str) -> Result<(), String> {
+    let marker_file = image_dir.join(marker_path);
+
+    fs::write(&marker_file, contents).map_err(|error| {
+        format!(
+            "failed to write marker file {}: {error}",
+            marker_file.display()
+        )
+    })
 }
 
 /// Finds the UEFI firmware code file, using `RUSTOS_UEFI_CODE` when set and
