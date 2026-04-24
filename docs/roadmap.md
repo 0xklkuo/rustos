@@ -412,8 +412,10 @@ Deliverables:
 - minimal host-testable syscall number and result model
 - minimal kernel syscall boundary
 - task model sketch
+- task direction notes
 - minimal host-testable task state starter
 - descriptor or handle direction
+- descriptor direction notes
 - minimal host-testable descriptor handle starter
 - VFS direction
 - clearer user and kernel boundary planning
@@ -425,11 +427,13 @@ Current implementation status:
 - syscall work should remain interface-first and host-testable before any real ABI or user-mode entry work begins
 - task work should remain state-first and should not imply scheduling or context switching yet
 - descriptor work should remain handle-first and should not imply a real file or device model yet
+- dedicated task and descriptor direction notes should keep those boundaries explicit before deeper implementation work begins
 
 Acceptance criteria:
 
 - the Unix-like direction is reflected in small explicit kernel boundaries
 - syscall, task, descriptor, and VFS direction are documented clearly
+- dedicated task and descriptor direction notes keep those subsystem boundaries easy to understand
 - host-testable syscall, task, and descriptor starters are small, explicit, and covered by unit tests
 - the implementation order remains realistic and educational
 

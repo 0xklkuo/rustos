@@ -69,6 +69,8 @@ See:
 - `docs/blog-os-adoption.md`
 - `docs/paging.md`
 - `docs/syscalls.md`
+- `docs/tasks.md`
+- `docs/descriptors.md`
 - `docs/decisions/0001-target-platform.md`
 
 ## Local Development
