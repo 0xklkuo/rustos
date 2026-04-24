@@ -14,6 +14,7 @@ pub mod interrupt;
 pub mod memory;
 pub mod paging;
 pub mod panic;
+pub mod syscall;
 
 /// Deterministic boot message printed during early startup.
 pub const BOOT_MESSAGE: &str = "rustos: boot start";
@@ -137,6 +138,27 @@ pub const PAGING_ARCH_PROBE_READY_MESSAGE: &str = "rustos: paging arch probe rea
 
 /// Runtime log message printed when heap setup is still deferred.
 pub const HEAP_INIT_DEFERRED_MESSAGE: &str = "rustos: heap init deferred";
+
+/// Runtime log message printed before syscall boundary setup begins.
+pub const SYSCALL_INIT_MESSAGE: &str = "rustos: syscall init";
+
+/// Runtime log message printed when syscall direction is defined.
+pub const SYSCALL_DIRECTION_DEFINED_MESSAGE: &str = "rustos: syscall direction defined";
+
+/// Runtime log message printed when the syscall boundary is ready.
+pub const SYSCALL_BOUNDARY_READY_MESSAGE: &str = "rustos: syscall boundary ready";
+
+/// Runtime log message printed when a syscall number is invalid.
+pub const SYSCALL_INVALID_NUMBER_MESSAGE: &str = "rustos: syscall invalid number";
+
+/// Runtime log message printed when a syscall succeeds.
+pub const SYSCALL_SUCCESS_MESSAGE: &str = "rustos: syscall success";
+
+/// Runtime log message printed when a syscall argument is invalid.
+pub const SYSCALL_INVALID_ARGUMENT_MESSAGE: &str = "rustos: syscall invalid argument";
+
+/// Runtime log message printed when a descriptor-like handle is invalid.
+pub const SYSCALL_INVALID_HANDLE_MESSAGE: &str = "rustos: syscall invalid handle";
 
 /// Runtime log message printed before entering the idle path.
 pub const IDLE_READY_MESSAGE: &str = "rustos: idle ready";

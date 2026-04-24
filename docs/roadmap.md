@@ -402,22 +402,35 @@ Acceptance criteria:
 
 ### U6 — Unix-like Kernel Boundary
 
-Status: documentation-only
+Status: minimal starter in progress
 
-Goal: make the Unix-like direction concrete through small kernel interfaces.
+Goal: make the Unix-like direction concrete through small kernel interfaces without introducing premature user-mode, scheduler, or VFS complexity.
 
 Deliverables:
 
 - syscall boundary notes
+- minimal host-testable syscall number and result model
+- minimal kernel syscall boundary
 - task model sketch
+- minimal host-testable task state starter
 - descriptor or handle direction
+- minimal host-testable descriptor handle starter
 - VFS direction
 - clearer user and kernel boundary planning
+
+Current implementation status:
+
+- the Unix-like direction is already documented at a high level in `docs/unix-like.md`
+- U6 should now make that direction more concrete through the smallest useful syscall, task, and descriptor boundaries
+- syscall work should remain interface-first and host-testable before any real ABI or user-mode entry work begins
+- task work should remain state-first and should not imply scheduling or context switching yet
+- descriptor work should remain handle-first and should not imply a real file or device model yet
 
 Acceptance criteria:
 
 - the Unix-like direction is reflected in small explicit kernel boundaries
-- syscall, task, and VFS direction are documented clearly
+- syscall, task, descriptor, and VFS direction are documented clearly
+- host-testable syscall, task, and descriptor starters are small, explicit, and covered by unit tests
 - the implementation order remains realistic and educational
 
 ## Suggested Release Shape

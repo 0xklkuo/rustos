@@ -57,7 +57,7 @@ This repository is organized as a small monorepo:
 This project is in the early foundation stage.
 
 Current milestone:
-- Milestone U5 — paging and heap direction
+- Milestone U6 — Unix-like kernel boundary
 
 ## Roadmap
 
@@ -68,6 +68,7 @@ See:
 - `docs/testing.md`
 - `docs/blog-os-adoption.md`
 - `docs/paging.md`
+- `docs/syscalls.md`
 - `docs/decisions/0001-target-platform.md`
 
 ## Local Development

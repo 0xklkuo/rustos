@@ -118,6 +118,11 @@ fn initialize_runtime(console_state: crate::console::State) {
         crate::console::write_line(crate::HEAP_INIT_DEFERRED_MESSAGE);
     }
 
+    crate::console::write_line(crate::SYSCALL_INIT_MESSAGE);
+    let syscall = crate::syscall::init();
+    crate::console::write_line(crate::syscall::init_summary(syscall));
+    crate::console::write_line(crate::syscall::boundary_summary(syscall));
+
     crate::console::write_line(crate::panic::init());
     crate::console::write_line(crate::IDLE_READY_MESSAGE);
     crate::console::write_line(crate::RUNTIME_INIT_COMPLETE_MESSAGE);

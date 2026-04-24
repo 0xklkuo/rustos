@@ -1341,3 +1341,332 @@ pub mod paging {
         }
     }
 }
+
+pub mod syscall {
+    //! Minimal syscall direction that is safe to test on the host.
+    //!
+    //! This module defines the smallest useful syscall concepts for the current
+    //! U6 milestone. It does not implement a real syscall ABI or kernel entry
+    //! path yet.
+
+    /// Small set of syscall numbers for the current milestone.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum Number {
+        /// Write to a descriptor-like handle.
+        Write,
+        /// Exit the current task.
+        Exit,
+        /// Unknown or unsupported syscall number.
+        Unknown(u64),
+    }
+
+    /// Small syscall error model for the current milestone.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum Error {
+        /// The syscall number is not recognized.
+        InvalidNumber,
+        /// One or more syscall arguments are invalid.
+        InvalidArgument,
+        /// The descriptor-like handle is invalid.
+        InvalidHandle,
+    }
+
+    /// Small syscall result model for the current milestone.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Result {
+        value: usize,
+        error: Option<Error>,
+    }
+
+    impl Number {
+        /// Decodes a raw syscall number into the current minimal syscall model.
+        #[must_use]
+        pub const fn decode(raw: u64) -> Self {
+            match raw {
+                1 => Self::Write,
+                2 => Self::Exit,
+                other => Self::Unknown(other),
+            }
+        }
+
+        /// Returns the raw syscall number.
+        #[must_use]
+        pub const fn raw(self) -> u64 {
+            match self {
+                Self::Write => 1,
+                Self::Exit => 2,
+                Self::Unknown(raw) => raw,
+            }
+        }
+
+        /// Returns whether the syscall number is known.
+        #[must_use]
+        pub const fn is_known(self) -> bool {
+            !matches!(self, Self::Unknown(_))
+        }
+    }
+
+    impl Result {
+        /// Creates a successful syscall result.
+        #[must_use]
+        pub const fn success(value: usize) -> Self {
+            Self { value, error: None }
+        }
+
+        /// Creates a failed syscall result.
+        #[must_use]
+        pub const fn error(error: Error) -> Self {
+            Self {
+                value: 0,
+                error: Some(error),
+            }
+        }
+
+        /// Returns the successful value, if present.
+        #[must_use]
+        pub const fn value(self) -> usize {
+            self.value
+        }
+
+        /// Returns the syscall error, if present.
+        #[must_use]
+        pub const fn error_kind(self) -> Option<Error> {
+            self.error
+        }
+
+        /// Returns whether the syscall result is successful.
+        #[must_use]
+        pub const fn is_success(self) -> bool {
+            self.error.is_none()
+        }
+    }
+
+    /// Returns a small plain-language summary of the syscall number.
+    #[must_use]
+    pub const fn number_summary(number: Number) -> &'static str {
+        match number {
+            Number::Write => "rustos: syscall write",
+            Number::Exit => "rustos: syscall exit",
+            Number::Unknown(_) => "rustos: syscall invalid number",
+        }
+    }
+
+    /// Returns a small plain-language summary of the syscall result.
+    #[must_use]
+    pub const fn result_summary(result: Result) -> &'static str {
+        match result.error_kind() {
+            None => "rustos: syscall success",
+            Some(Error::InvalidNumber) => "rustos: syscall invalid number",
+            Some(Error::InvalidArgument) => "rustos: syscall invalid argument",
+            Some(Error::InvalidHandle) => "rustos: syscall invalid handle",
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::{Error, Number, Result, number_summary, result_summary};
+
+        #[test]
+        fn decode_known_syscall_numbers() {
+            assert_eq!(Number::decode(1), Number::Write);
+            assert_eq!(Number::decode(2), Number::Exit);
+        }
+
+        #[test]
+        fn decode_unknown_syscall_number() {
+            assert_eq!(Number::decode(99), Number::Unknown(99));
+        }
+
+        #[test]
+        fn raw_syscall_numbers_match_expected_values() {
+            assert_eq!(Number::Write.raw(), 1);
+            assert_eq!(Number::Exit.raw(), 2);
+            assert_eq!(Number::Unknown(99).raw(), 99);
+        }
+
+        #[test]
+        fn known_syscall_numbers_report_known() {
+            assert!(Number::Write.is_known());
+            assert!(Number::Exit.is_known());
+            assert!(!Number::Unknown(99).is_known());
+        }
+
+        #[test]
+        fn successful_syscall_result_reports_success() {
+            let result = Result::success(7);
+
+            assert!(result.is_success());
+            assert_eq!(result.value(), 7);
+            assert_eq!(result.error_kind(), None);
+            assert_eq!(result_summary(result), "rustos: syscall success");
+        }
+
+        #[test]
+        fn failed_syscall_result_reports_error() {
+            let result = Result::error(Error::InvalidArgument);
+
+            assert!(!result.is_success());
+            assert_eq!(result.value(), 0);
+            assert_eq!(result.error_kind(), Some(Error::InvalidArgument));
+            assert_eq!(result_summary(result), "rustos: syscall invalid argument");
+        }
+
+        #[test]
+        fn syscall_number_summaries_match_expected_values() {
+            assert_eq!(number_summary(Number::Write), "rustos: syscall write");
+            assert_eq!(number_summary(Number::Exit), "rustos: syscall exit");
+            assert_eq!(
+                number_summary(Number::Unknown(99)),
+                "rustos: syscall invalid number"
+            );
+        }
+    }
+}
+
+pub mod task {
+    //! Minimal task direction that is safe to test on the host.
+    //!
+    //! This module defines the smallest useful task concepts for the current U6
+    //! milestone. It does not implement scheduling or context switching.
+
+    /// Small kernel-visible task identifier.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Id(usize);
+
+    /// Small task state model for the current milestone.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum State {
+        /// The task exists but is not ready to run yet.
+        Created,
+        /// The task is ready to run.
+        Ready,
+        /// The task is currently running.
+        Running,
+        /// The task has exited.
+        Exited,
+    }
+
+    impl Id {
+        /// Creates a new task identifier.
+        #[must_use]
+        pub const fn new(value: usize) -> Self {
+            Self(value)
+        }
+
+        /// Returns the raw task identifier value.
+        #[must_use]
+        pub const fn as_usize(self) -> usize {
+            self.0
+        }
+
+        /// Returns whether the task identifier is valid.
+        #[must_use]
+        pub const fn is_valid(self) -> bool {
+            self.0 > 0
+        }
+    }
+
+    /// Returns a small plain-language summary of the task state.
+    #[must_use]
+    pub const fn state_summary(state: State) -> &'static str {
+        match state {
+            State::Created => "rustos: task created",
+            State::Ready => "rustos: task ready",
+            State::Running => "rustos: task running",
+            State::Exited => "rustos: task exited",
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::{Id, State, state_summary};
+
+        #[test]
+        fn task_id_reports_raw_value() {
+            let id = Id::new(1);
+
+            assert_eq!(id.as_usize(), 1);
+            assert!(id.is_valid());
+        }
+
+        #[test]
+        fn zero_task_id_is_invalid() {
+            let id = Id::new(0);
+
+            assert_eq!(id.as_usize(), 0);
+            assert!(!id.is_valid());
+        }
+
+        #[test]
+        fn task_state_summaries_match_expected_values() {
+            assert_eq!(state_summary(State::Created), "rustos: task created");
+            assert_eq!(state_summary(State::Ready), "rustos: task ready");
+            assert_eq!(state_summary(State::Running), "rustos: task running");
+            assert_eq!(state_summary(State::Exited), "rustos: task exited");
+        }
+    }
+}
+
+pub mod descriptor {
+    //! Minimal descriptor direction that is safe to test on the host.
+    //!
+    //! This module defines the smallest useful descriptor-like handle concept
+    //! for the current U6 milestone.
+
+    /// Small descriptor-like handle type.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Handle(u32);
+
+    impl Handle {
+        /// Creates a new descriptor-like handle.
+        #[must_use]
+        pub const fn new(value: u32) -> Self {
+            Self(value)
+        }
+
+        /// Returns the raw handle value.
+        #[must_use]
+        pub const fn as_u32(self) -> u32 {
+            self.0
+        }
+
+        /// Returns whether the handle is valid.
+        #[must_use]
+        pub const fn is_valid(self) -> bool {
+            self.0 > 0
+        }
+    }
+
+    /// Returns a small plain-language summary of the handle state.
+    #[must_use]
+    pub const fn handle_summary(handle: Handle) -> &'static str {
+        if handle.is_valid() {
+            "rustos: descriptor handle valid"
+        } else {
+            "rustos: descriptor handle invalid"
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::{Handle, handle_summary};
+
+        #[test]
+        fn non_zero_handle_is_valid() {
+            let handle = Handle::new(1);
+
+            assert_eq!(handle.as_u32(), 1);
+            assert!(handle.is_valid());
+            assert_eq!(handle_summary(handle), "rustos: descriptor handle valid");
+        }
+
+        #[test]
+        fn zero_handle_is_invalid() {
+            let handle = Handle::new(0);
+
+            assert_eq!(handle.as_u32(), 0);
+            assert!(!handle.is_valid());
+            assert_eq!(handle_summary(handle), "rustos: descriptor handle invalid");
+        }
+    }
+}
