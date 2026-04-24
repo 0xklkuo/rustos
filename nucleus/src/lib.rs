@@ -1378,6 +1378,17 @@ pub mod syscall {
         error: Option<Error>,
     }
 
+    /// Small syscall request model for the current milestone.
+    ///
+    /// This keeps dispatch logic explicit and host-testable without implying a
+    /// real syscall ABI or register-based calling convention yet.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Request {
+        number: Number,
+        handle: u32,
+        value: usize,
+    }
+
     impl Number {
         /// Decodes a raw syscall number into the current minimal syscall model.
         #[must_use]
@@ -1441,6 +1452,63 @@ pub mod syscall {
         }
     }
 
+    impl Request {
+        /// Creates a new syscall request.
+        #[must_use]
+        pub const fn new(number: Number, handle: u32, value: usize) -> Self {
+            Self {
+                number,
+                handle,
+                value,
+            }
+        }
+
+        /// Returns the syscall number for this request.
+        #[must_use]
+        pub const fn number(self) -> Number {
+            self.number
+        }
+
+        /// Returns the descriptor-like handle for this request.
+        #[must_use]
+        pub const fn handle(self) -> u32 {
+            self.handle
+        }
+
+        /// Returns the small value field for this request.
+        ///
+        /// For the current milestone, this is used as:
+        /// - byte count for `write`
+        /// - exit code for `exit`
+        #[must_use]
+        pub const fn value(self) -> usize {
+            self.value
+        }
+    }
+
+    /// Dispatches a minimal syscall request.
+    ///
+    /// This keeps the current U6.1 milestone intentionally small:
+    /// - `write` succeeds only for a valid handle and non-zero byte count
+    /// - `exit` succeeds and returns the provided exit code
+    /// - unknown syscall numbers fail explicitly
+    #[must_use]
+    pub const fn dispatch(request: Request) -> Result {
+        match request.number() {
+            Number::Write => {
+                if request.handle() == 0 {
+                    Result::error(Error::InvalidHandle)
+                } else if request.value() == 0 {
+                    Result::error(Error::InvalidArgument)
+                } else {
+                    Result::success(request.value())
+                }
+            }
+            Number::Exit => Result::success(request.value()),
+            Number::Unknown(_) => Result::error(Error::InvalidNumber),
+        }
+    }
+
     /// Returns a small plain-language summary of the syscall number.
     #[must_use]
     pub const fn number_summary(number: Number) -> &'static str {
@@ -1464,7 +1532,7 @@ pub mod syscall {
 
     #[cfg(test)]
     mod tests {
-        use super::{Error, Number, Result, number_summary, result_summary};
+        use super::{Error, Number, Request, Result, dispatch, number_summary, result_summary};
 
         #[test]
         fn decode_known_syscall_numbers() {
@@ -1519,6 +1587,70 @@ pub mod syscall {
                 number_summary(Number::Unknown(99)),
                 "rustos: syscall invalid number"
             );
+        }
+
+        #[test]
+        fn request_reports_expected_fields() {
+            let request = Request::new(Number::Write, 1, 12);
+
+            assert_eq!(request.number(), Number::Write);
+            assert_eq!(request.handle(), 1);
+            assert_eq!(request.value(), 12);
+        }
+
+        #[test]
+        fn dispatch_write_succeeds_for_valid_handle_and_non_zero_length() {
+            let request = Request::new(Number::Write, 1, 12);
+            let result = dispatch(request);
+
+            assert!(result.is_success());
+            assert_eq!(result.value(), 12);
+            assert_eq!(result.error_kind(), None);
+            assert_eq!(result_summary(result), "rustos: syscall success");
+        }
+
+        #[test]
+        fn dispatch_write_rejects_invalid_handle() {
+            let request = Request::new(Number::Write, 0, 12);
+            let result = dispatch(request);
+
+            assert!(!result.is_success());
+            assert_eq!(result.value(), 0);
+            assert_eq!(result.error_kind(), Some(Error::InvalidHandle));
+            assert_eq!(result_summary(result), "rustos: syscall invalid handle");
+        }
+
+        #[test]
+        fn dispatch_write_rejects_zero_length() {
+            let request = Request::new(Number::Write, 1, 0);
+            let result = dispatch(request);
+
+            assert!(!result.is_success());
+            assert_eq!(result.value(), 0);
+            assert_eq!(result.error_kind(), Some(Error::InvalidArgument));
+            assert_eq!(result_summary(result), "rustos: syscall invalid argument");
+        }
+
+        #[test]
+        fn dispatch_exit_returns_exit_code_as_success_value() {
+            let request = Request::new(Number::Exit, 0, 7);
+            let result = dispatch(request);
+
+            assert!(result.is_success());
+            assert_eq!(result.value(), 7);
+            assert_eq!(result.error_kind(), None);
+            assert_eq!(result_summary(result), "rustos: syscall success");
+        }
+
+        #[test]
+        fn dispatch_unknown_syscall_reports_invalid_number() {
+            let request = Request::new(Number::Unknown(99), 0, 0);
+            let result = dispatch(request);
+
+            assert!(!result.is_success());
+            assert_eq!(result.value(), 0);
+            assert_eq!(result.error_kind(), Some(Error::InvalidNumber));
+            assert_eq!(result_summary(result), "rustos: syscall invalid number");
         }
     }
 }

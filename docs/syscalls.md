@@ -43,6 +43,7 @@ The current U6 goal is:
 - define syscall direction clearly in documentation
 - add a host-testable syscall number model
 - add a host-testable syscall result and error model
+- add a tiny host-testable syscall dispatch sketch
 - add a small kernel syscall boundary module
 - keep task and descriptor direction minimal and explicit
 - defer real syscall ABI wiring and user-mode execution
@@ -56,7 +57,9 @@ For the current milestone, `rustos` may expose:
 - a small syscall number enum
 - a small syscall error enum
 - a small syscall result type
+- a small syscall request type
 - a decode helper for raw syscall numbers
+- a tiny dispatch helper for host-side validation
 - a kernel syscall boundary module
 - plain-language summaries for early validation and teaching
 
@@ -98,6 +101,7 @@ This is enough to define:
 - syscall number representation
 - success and failure results
 - invalid syscall handling
+- a first dispatch shape
 - descriptor-like resource direction
 - task lifecycle direction
 
@@ -178,6 +182,47 @@ is enough for the current milestone.
 
 This keeps the model explicit without forcing a larger ABI encoding decision yet.
 
+## Tiny Dispatch Sketch
+
+The current U6.1 refinement adds a tiny host-testable dispatch sketch.
+
+Its purpose is not to model a real syscall ABI.
+Its purpose is to make the syscall boundary slightly more concrete while keeping all logic easy to test on the host.
+
+A practical minimal request shape is:
+
+- syscall number
+- descriptor-like handle
+- one small value field
+
+For the current milestone, that value field can stand in for:
+
+- byte count for `write`
+- exit code for `exit`
+
+This keeps the dispatch model intentionally small and avoids pretending that register-based argument passing already exists.
+
+### Current Dispatch Rules
+
+The current dispatch sketch should stay narrow and explicit:
+
+- `write`
+  - fail with `InvalidHandle` when the handle is zero
+  - fail with `InvalidArgument` when the byte count is zero
+  - otherwise succeed and return the byte count
+- `exit`
+  - succeed and return the provided exit code as the success value
+- `Unknown(raw)`
+  - fail with `InvalidNumber`
+
+These rules are intentionally simple.
+
+They are useful because they:
+- make the first syscall behavior boundary concrete
+- keep validation logic easy to understand
+- avoid introducing dispatch-table or ABI complexity too early
+- give contributors a small pure-logic model to test and extend later
+
 ## Kernel Boundary Rule
 
 The syscall boundary should remain separate from internal kernel helpers.
@@ -239,6 +284,8 @@ Prefer unit tests for:
 - syscall number decoding
 - known and unknown syscall handling
 - syscall result success and failure behavior
+- syscall request field access
+- tiny dispatch success and failure behavior
 - syscall summary helpers
 - invalid argument and invalid handle cases
 
@@ -267,7 +314,7 @@ Later milestones may introduce some of the following, if justified:
 
 - architecture-specific syscall entry and exit
 - register-based argument passing rules
-- syscall dispatch logic
+- richer syscall dispatch logic
 - pointer validation rules
 - copy-in and copy-out helpers
 - descriptor-backed console writes
