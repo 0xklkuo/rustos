@@ -39,6 +39,7 @@ The current U6 goal is:
 
 - define descriptor direction clearly in documentation
 - add a host-testable descriptor-like handle starter
+- add a tiny host-testable task-to-descriptor ownership sketch
 - keep the descriptor boundary separate from internal kernel helpers
 - keep ownership and release direction explicit
 - defer real descriptor tables, VFS integration, and device models
@@ -51,8 +52,9 @@ For the current milestone, `rustos` may expose:
 
 - a small descriptor-like handle type
 - a simple validity rule
+- a tiny task-to-descriptor ownership sketch
 - a plain-language summary helper
-- host-side unit tests for the minimal handle behavior
+- host-side unit tests for the minimal handle and ownership behavior
 
 These pieces are intentionally small.
 
@@ -63,7 +65,7 @@ They exist to define the first resource-handle boundary, not to claim that the k
 The following are intentionally deferred for now:
 
 - real descriptor tables
-- per-task descriptor ownership
+- richer per-task descriptor ownership models
 - open and close syscalls
 - read and write implementations backed by real resources
 - file-backed descriptors
@@ -150,6 +152,42 @@ This distinction matters even before real descriptor tables exist.
 
 It helps prevent the project from accidentally treating raw internal state as if it were already a stable public interface.
 
+### Tiny Ownership Sketch
+
+The current U6.3 refinement adds a tiny host-testable ownership sketch.
+
+Its purpose is not to model a real descriptor table.
+Its purpose is to make the relationship between tasks and descriptor-like handles slightly more concrete while keeping the model easy to test on the host.
+
+A practical minimal ownership shape is:
+
+- one task identifier
+- one descriptor-like handle
+
+This keeps the ownership model intentionally small and avoids pretending that the kernel already has:
+
+- descriptor tables
+- per-task descriptor maps
+- inheritance rules
+- release rules
+- allocation policies
+
+### Current Ownership Rule
+
+The current ownership sketch should stay narrow and explicit:
+
+- ownership is valid only when the task identifier is valid
+- ownership is valid only when the descriptor-like handle is valid
+- otherwise ownership is invalid
+
+These rules are intentionally simple.
+
+They are useful because they:
+- make the first task-to-descriptor relationship concrete
+- keep ownership validation easy to understand
+- avoid introducing table-management complexity too early
+- give contributors a small pure-logic model to test and extend later
+
 ## Release Direction
 
 A Unix-like descriptor model eventually needs release behavior.
@@ -182,7 +220,7 @@ The descriptor model and task model are also related, but they should not be mer
 
 For the current milestone:
 
-- descriptor ownership should not yet imply per-task descriptor tables
+- the tiny ownership sketch should not yet imply per-task descriptor tables
 - task lifecycle should not yet imply descriptor inheritance or cleanup rules
 - those rules should be introduced only when task and syscall behavior become more concrete
 
@@ -212,6 +250,8 @@ Prefer unit tests for:
 - raw handle access
 - validity checks
 - invalid handle behavior
+- ownership validity checks
+- ownership summary helpers
 - summary helpers
 
 ### Use Emulator Tests Only When Needed
@@ -237,6 +277,7 @@ When extending descriptor work in `rustos`, follow these rules:
 
 Later milestones may introduce some of the following, if justified:
 
+- richer per-task descriptor ownership models
 - per-task descriptor tables
 - explicit close or release behavior
 - descriptor allocation rules
@@ -257,6 +298,7 @@ For the current `rustos` milestone, the descriptor direction is:
 
 - documented clearly
 - represented by a small host-testable handle type
+- extended by a tiny host-testable ownership sketch
 - intentionally separate from internal kernel helpers
 - useful for future syscall and resource-boundary work
 - not yet a real descriptor-table implementation

@@ -38,6 +38,7 @@ The current U6 goal is:
 - define task direction clearly in documentation
 - add a host-testable task identifier
 - add a host-testable task state model
+- add a tiny host-testable ownership sketch connecting a task to a descriptor-like handle
 - keep task behavior separate from scheduling
 - defer context switching and process management
 
@@ -49,8 +50,9 @@ For the current milestone, `rustos` may expose:
 
 - a small task identifier type
 - a small task state enum
+- a tiny ownership sketch connecting one task identifier to one descriptor-like handle
 - plain-language summaries for task state
-- host-side unit tests for task identity and state
+- host-side unit tests for task identity, state, and ownership validity
 
 These pieces are intentionally small.
 
@@ -184,9 +186,10 @@ Tasks will eventually own or reference descriptor-like resources.
 
 For the current milestone:
 
-- descriptor ownership should remain conceptual
+- descriptor ownership should remain minimal and explicit
 - task identity should not yet imply a descriptor table
-- task and descriptor models should stay separate and small
+- one tiny ownership sketch may connect a valid task identifier to a valid descriptor-like handle
+- task and descriptor models should stay separate and small beyond that narrow boundary
 
 This avoids introducing resource-management complexity too early.
 
@@ -230,6 +233,7 @@ Prefer unit tests for:
 - raw task identifier access
 - task state summaries
 - simple lifecycle meaning
+- ownership validity when task and handle values are valid or invalid
 
 ### Use Emulator Tests Only When Needed
 
@@ -258,7 +262,7 @@ Later milestones may introduce some of the following, if justified:
 - runnable queue direction
 - scheduler policy
 - timer-driven preemption groundwork
-- task ownership of descriptors
+- richer task ownership of descriptors
 - task ownership of address spaces
 - task exit handling tied to real kernel state
 - waiting and reaping rules
@@ -273,6 +277,7 @@ For the current `rustos` milestone, the task direction is:
 
 - documented clearly
 - represented by a small host-testable model
+- connected to a tiny ownership sketch for descriptor-like handles
 - intentionally separate from scheduling
 - intentionally separate from process complexity
 - not yet a real multitasking implementation
