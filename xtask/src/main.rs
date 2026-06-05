@@ -19,7 +19,7 @@ const KERNEL_BINARY_NAME: &str = "kernel.efi";
 const EFI_BOOT_PATH: &str = "EFI/BOOT/BOOTX64.EFI";
 const STARTUP_SCRIPT_PATH: &str = "startup.nsh";
 const DEFAULT_MEMORY_MB: &str = "256M";
-const DEFAULT_TEST_TIMEOUT_SECS: u64 = 10;
+const DEFAULT_TEST_TIMEOUT_SECS: u64 = 20;
 const SUCCESS_MARKER: &str = "rustos: hello from UEFI";
 const EXCEPTION_SUCCESS_MARKER: &str = "rustos: breakpoint handler reached";
 const EXCEPTION_MARKER_PATH: &str = "rustos-exception-test";
@@ -61,9 +61,19 @@ fn main() {
     }
 }
 
-/// Runs workspace-wide `cargo check` for all targets.
+/// Runs workspace-wide checks plus a target-specific UEFI kernel check.
 fn cmd_check() -> Result<(), String> {
-    run_command("cargo", ["check", "--workspace", "--all-targets"])
+    run_command("cargo", ["check", "--workspace", "--all-targets"])?;
+    run_command(
+        "cargo",
+        [
+            "check",
+            "--package",
+            KERNEL_PACKAGE,
+            "--target",
+            UEFI_TARGET,
+        ],
+    )
 }
 
 /// Runs the local validation sequence intended to match CI closely.

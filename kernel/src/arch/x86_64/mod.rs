@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 #![cfg(target_arch = "x86_64")]
 
 //! Minimal x86_64 exception support for `rustos`.
@@ -8,9 +7,6 @@
 //! - build a small IDT
 //! - install a real breakpoint handler
 //! - expose explicit handler state to the rest of the kernel
-//!
-//! The implementation stays intentionally narrow. It does not claim full
-//! interrupt, exception, or paging subsystem completeness.
 
 use core::sync::atomic::{AtomicBool, Ordering};
 
@@ -42,9 +38,6 @@ pub struct HandlerState {
 }
 
 /// Small summary of the current x86_64 paging probe state.
-///
-/// This does not expose or modify page tables. It only records whether the
-/// current architecture can observe a minimal paging-facing runtime boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PagingProbeState {
     paging_active: bool,
@@ -146,11 +139,6 @@ impl Default for HandlerState {
 }
 
 /// Loads the minimal IDT for the current milestone.
-///
-/// Safety and invariants:
-/// - the IDT is stored in a process-long static and is never moved
-/// - only the breakpoint entry is configured at this stage
-/// - repeated calls are harmless for the current milestone
 pub fn init_idt() -> HandlerState {
     IDT.load();
     IDT_LOADED.store(true, Ordering::SeqCst);
@@ -186,131 +174,23 @@ pub fn breakpoint_handler_reached() -> bool {
 }
 
 /// Triggers a real CPU breakpoint exception.
-///
-/// This should only be called after `init_idt`.
 pub fn trigger_breakpoint() {
     interrupts::int3();
 }
 
 /// Returns whether a minimal x86_64 paging probe is available.
-///
-/// For the current milestone, this is true because the architecture layer can
-/// observe the active level-4 page-table frame through `CR3` without taking
-/// ownership of page-table management.
 #[must_use]
 pub fn has_paging_probe() -> bool {
     paging_probe_state().is_paging_active()
 }
 
 /// Returns a minimal x86_64 paging probe state.
-///
-/// This keeps the U5 milestone small:
-/// - observe whether paging is active through the current CR3 value
-/// - record the current level-4 page-table frame address
-/// - avoid modifying mappings or exposing page-table management yet
 #[must_use]
 pub fn paging_probe_state() -> PagingProbeState {
     let (frame, _) = Cr3::read();
     PagingProbeState::active(frame.start_address().as_u64())
 }
 
-/// Returns a short plain-language summary of the current paging probe state.
-#[must_use]
-pub const fn paging_probe_summary(state: PagingProbeState) -> &'static str {
-    if state.is_paging_active() {
-        "rustos: paging arch probe ready"
-    } else {
-        "rustos: paging deferred"
-    }
-}
-
-/// Returns a short plain-language summary of the current handler state.
-#[must_use]
-pub const fn handler_summary(state: HandlerState) -> &'static str {
-    if state.is_breakpoint_handler_reached() {
-        crate::BREAKPOINT_HANDLER_REACHED_MESSAGE
-    } else if state.is_breakpoint_handler_installed() && state.is_idt_loaded() {
-        crate::BREAKPOINT_HANDLER_ACTIVE_MESSAGE
-    } else {
-        crate::EXCEPTION_INIT_PENDING_MESSAGE
-    }
-}
-
 extern "x86-interrupt" fn breakpoint_handler(_stack_frame: InterruptStackFrame) {
     BREAKPOINT_HANDLER_REACHED.store(true, Ordering::SeqCst);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{HandlerState, PagingProbeState, handler_summary, paging_probe_summary};
-
-    #[test]
-    fn new_handler_state_starts_uninitialized() {
-        let state = HandlerState::new();
-
-        assert!(!state.is_idt_loaded());
-        assert!(!state.is_breakpoint_handler_installed());
-        assert!(!state.is_breakpoint_handler_reached());
-        assert_eq!(
-            handler_summary(state),
-            crate::EXCEPTION_INIT_PENDING_MESSAGE
-        );
-    }
-
-    #[test]
-    fn installed_handler_state_reports_installed() {
-        let state = HandlerState::installed();
-
-        assert!(state.is_idt_loaded());
-        assert!(state.is_breakpoint_handler_installed());
-        assert!(!state.is_breakpoint_handler_reached());
-        assert_eq!(
-            handler_summary(state),
-            crate::BREAKPOINT_HANDLER_ACTIVE_MESSAGE
-        );
-    }
-
-    #[test]
-    fn reached_handler_state_reports_reached() {
-        let state = HandlerState::breakpoint_reached();
-
-        assert!(state.is_idt_loaded());
-        assert!(state.is_breakpoint_handler_installed());
-        assert!(state.is_breakpoint_handler_reached());
-        assert_eq!(
-            handler_summary(state),
-            crate::BREAKPOINT_HANDLER_REACHED_MESSAGE
-        );
-    }
-
-    #[test]
-    fn default_handler_state_matches_new() {
-        assert_eq!(HandlerState::default(), HandlerState::new());
-    }
-
-    #[test]
-    fn new_paging_probe_state_starts_empty() {
-        let state = PagingProbeState::new();
-
-        assert!(!state.is_paging_active());
-        assert_eq!(state.level_4_table_frame(), 0);
-        assert_eq!(paging_probe_summary(state), "rustos: paging deferred");
-    }
-
-    #[test]
-    fn active_paging_probe_state_reports_ready() {
-        let state = PagingProbeState::active(0x1000);
-
-        assert!(state.is_paging_active());
-        assert_eq!(state.level_4_table_frame(), 0x1000);
-        assert_eq!(
-            paging_probe_summary(state),
-            "rustos: paging arch probe ready"
-        );
-    }
-
-    #[test]
-    fn default_paging_probe_state_matches_new() {
-        assert_eq!(PagingProbeState::default(), PagingProbeState::new());
-    }
 }

@@ -2,44 +2,97 @@
 
 [![CI](https://github.com/0xklkuo/rustos/actions/workflows/ci.yml/badge.svg)](https://github.com/0xklkuo/rustos/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/0xklkuo/rustos?label=release&sort=semver)](https://github.com/0xklkuo/rustos/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE) [![Rust nightly](https://img.shields.io/badge/rust-nightly-blue.svg)](./rust-toolchain.toml) [![Target: x86_64 UEFI](https://img.shields.io/badge/target-x86_64--unknown--uefi-blueviolet.svg)](./docs/decisions/0001-target-platform.md)
 
-`rustos` is a minimal, educational, and maintainable open-source project for learning Rust systems programming and modern operating system fundamentals by building a small OS from scratch.
+`rustos` is a minimal, educational, UEFI-first operating system project written in Rust.
 
-The project favors clarity over cleverness, small steps over large abstractions, and explicit design decisions over hidden complexity.
+The project is intentionally small, but it is no longer just a scaffold. It boots in QEMU, exercises a real breakpoint-handler path, discovers the UEFI memory map, and keeps most pure logic in host-testable modules so the foundation stays understandable and maintainable.
 
-## Goals
+## What exists today
 
-- Build a minimal bootable kernel in Rust
-- Establish a clean Unix-like OS foundation
-- Keep the codebase simple, readable, and easy to contribute to
-- Teach OS fundamentals through real code and concise documentation
-- Follow modern open-source engineering practices from the start
+- a bootable `x86_64-unknown-uefi` kernel for QEMU
+- deterministic early-boot and runtime log output
+- a real bounded breakpoint exception smoke path
+- real UEFI memory-map discovery and a derived frame-allocator seed
+- host-testable pure logic in `nucleus/` for:
+  - `arch`
+  - `console`
+  - `interrupt`
+  - `memory`
+  - `paging`
+  - `syscall`
+  - `task`
+  - `descriptor`
+  - `vfs`
+- explicit kernel boundaries in `kernel/` for boot, architecture, paging, syscalls, and the new VFS starter
+- a Rust-native `xtask` workflow for checks, formatting, linting, unit tests, QEMU smoke tests, and local runs
 
-## Non-Goals
+## What is intentionally deferred
 
-For the current MVP, `rustos` does not aim to provide:
+`rustos` is still a foundation-first project. It does **not** currently provide:
 
-- a production-ready operating system
-- broad hardware support
-- a full Unix-compatible userland
-- multitasking, filesystems, or networking
-- unnecessary abstraction or framework-heavy design
+- user-mode execution
+- a scheduler or multitasking
+- real frame allocation
+- a heap allocator
+- page-table management or mapping APIs
+- descriptor tables
+- a real virtual filesystem implementation
+- filesystems or networking
+- broad hardware support or multi-architecture support
+- POSIX compatibility claims
 
-## Current Status
+## Quick start
 
-`rustos` is in an early, foundation-first stage.
+### Requirements
 
-Current focus:
-- U6 — Unix-like kernel boundary
+Install:
 
-What works today:
-- boots as a small `x86_64-unknown-uefi` kernel in QEMU
-- prints deterministic boot and runtime logs
-- includes bounded QEMU smoke tests and host-side unit tests
-- keeps pure logic in `nucleus/` and firmware-facing runtime code in `kernel/`
+- nightly Rust
+- the `x86_64-unknown-uefi` Rust target
+- QEMU with `qemu-system-x86_64`
 
-## Proof of Life
+The toolchain is pinned in `rust-toolchain.toml`.
 
-A successful bounded QEMU boot currently looks like this:
+On macOS:
+
+- `brew install qemu`
+
+### Common commands
+
+Use `xtask` as the main local entry point:
+
+- `cargo run -p xtask -- check`
+- `cargo run -p xtask -- fmt`
+- `cargo run -p xtask -- lint`
+- `cargo run -p xtask -- test-unit`
+- `cargo run -p xtask -- test-qemu`
+- `cargo run -p xtask -- test-exception`
+- `cargo run -p xtask -- test`
+- `cargo run -p xtask -- run`
+
+## Repository layout
+
+- `kernel/` — firmware-facing kernel code and runtime boundaries
+- `nucleus/` — host-testable pure logic and small subsystem models
+- `xtask/` — developer workflow commands
+- `docs/` — project contract, architecture, roadmap, and decisions
+- `.github/` — CI and contribution templates
+
+## Core docs
+
+The documentation is intentionally centered on four core docs:
+
+- `README.md` — project overview and onboarding
+- `docs/spec.md` — current technical contract and subsystem behavior
+- `docs/architecture.md` — codebase structure, boundaries, and design rules
+- `docs/roadmap.md` — status, sequencing, and near-term priorities
+
+Durable platform rationale lives in:
+
+- `docs/decisions/0001-target-platform.md`
+
+## Proof of life
+
+The normal boot path currently emits this sequence:
 
 ```text
 rustos: boot start
@@ -73,104 +126,22 @@ rustos: heap init deferred
 rustos: syscall init
 rustos: syscall direction defined
 rustos: syscall boundary ready
+rustos: vfs init
+rustos: vfs namespace ready
+rustos: vfs console path ready
 rustos: panic
 rustos: idle ready
 rustos: runtime init complete
 ```
 
-## Quick Start
-
-### Requirements
-
-Install:
-
-- nightly Rust
-- the `x86_64-unknown-uefi` Rust target
-- QEMU with `qemu-system-x86_64`
-
-The Rust toolchain and target are pinned in `rust-toolchain.toml`.
-
-On macOS, for example:
-
-- `brew install qemu`
-
-### Common Commands
-
-Use `xtask` as the main entry point for local development.
-
-- `cargo run -p xtask -- check`
-- `cargo run -p xtask -- fmt`
-- `cargo run -p xtask -- lint`
-- `cargo run -p xtask -- test-unit`
-- `cargo run -p xtask -- test-qemu`
-- `cargo run -p xtask -- test-exception`
-- `cargo run -p xtask -- run`
-
-If you want the standard combined local validation flow, run:
-
-- `cargo run -p xtask -- test`
-
-## Repository Layout
-
-This repository is organized as a small monorepo:
-
-- `kernel/` — kernel crate and low-level OS code
-- `nucleus/` — host-testable pure logic shared with the kernel
-- `xtask/` — developer workflow commands
-- `docs/` — architecture notes, roadmap, and subsystem direction docs
-- `.github/` — CI and contribution templates
-
-## Documentation Map
-
-Start here:
-
-- `docs/README.md` — documentation guide
-- `docs/architecture.md` — stable architecture and project principles
-- `docs/roadmap.md` — milestone status and implementation sequence
-- `docs/testing.md` — testing strategy and validation workflow
-- `docs/unix-like.md` — Unix-like direction for the project
-
-Subsystem notes:
-
-- `docs/paging.md`
-- `docs/syscalls.md`
-- `docs/tasks.md`
-- `docs/descriptors.md`
-- `docs/blog-os-adoption.md`
-- `docs/decisions/0001-target-platform.md`
-
-## Releases
-
-Release planning and release-facing changes are tracked in:
-
-- `CHANGELOG.md`
-- GitHub Releases
-
-The current release preparation target is:
-
-- `v0.1.0-alpha.1`
-
 ## Contributing
 
-Contributions, questions, and suggestions are welcome.
+Start with:
 
-Please start with:
 - `CONTRIBUTING.md`
-
-Before opening a pull request, run:
-
-- `cargo run -p xtask -- check`
-- `cargo run -p xtask -- fmt`
-- `cargo run -p xtask -- lint`
-- `cargo run -p xtask -- test-unit`
-
-If your change affects boot behavior or the QEMU workflow, also run:
-
-- `cargo run -p xtask -- test-qemu`
-
-If your change affects the controlled exception path, also run:
-
-- `cargo run -p xtask -- test-exception`
+- `docs/spec.md`
+- `docs/architecture.md`
+- `docs/roadmap.md`
 
 ## License
 

@@ -1,276 +1,116 @@
 # Architecture
 
-## Purpose
+Status: current working architecture after the 2026-06 foundation refactor.
 
-`rustos` is a minimal, educational, and maintainable operating system project written in Rust.
+This document describes the stable shape of the codebase: the layers that exist, the boundaries that matter, and the rules that should guide future changes.
 
-This document explains the stable architectural shape of the project:
+For current implementation scope and subsystem behavior, see `docs/spec.md`.
+For status and next steps, see `docs/roadmap.md`.
 
-- what the system is trying to be
-- which boundaries matter
-- how the repository is organized
-- which principles should guide future changes
+## Architectural goals
 
-This document is intentionally not the project status page.
+`rustos` is optimized for:
 
-For milestone status, implementation progress, and release sequencing, see `docs/roadmap.md`.
+- small understandable modules
+- explicit subsystem boundaries
+- host-testable pure logic
+- narrow unsafe and firmware-facing code
+- reproducible local and CI workflows
+- documentation that matches the codebase instead of getting ahead of it
 
-## Project Shape
-
-`rustos` is a small Rust workspace for learning modern operating system fundamentals through a real codebase.
-
-The project is built around a few clear layers:
-
-- `kernel/` for firmware-facing and low-level OS code
-- `nucleus/` for host-testable pure logic shared with the kernel
-- `xtask/` for developer workflows
-- `docs/` for concise design notes and decisions
-- `.github/` for CI and contribution templates
-
-The architecture should remain small enough that a new contributor can understand the main structure quickly.
-
-## Goals
-
-The architecture should support these goals:
-
-- keep the codebase minimal and understandable
-- make subsystem boundaries explicit
-- keep low-level code teachable
-- support reproducible local development and CI
-- make host-testable logic easy to isolate
-- help contributors understand what is implemented and what is deferred
-
-## Non-Goals for the MVP
-
-The MVP architecture is not intended to support:
-
-- a full Unix-compatible environment
-- multitasking
-- a filesystem implementation
-- networking
-- user-space applications
-- broad hardware support
-- multi-architecture support
-- large framework-style abstractions
-
-These may be explored later, but they should not shape the early architecture prematurely.
-
-## Target Platform
-
-### Current target
-
-The current target platform is:
-
-- `x86_64-unknown-uefi`
-
-The current host development assumption is:
-
-- Apple Silicon macOS host
-- QEMU for emulation
-
-### Why this target
-
-This target is chosen because it keeps the early project practical and teachable:
-
-- it aligns well with existing Rust OS learning material
-- it keeps the boot path modern and explicit
-- it is practical to run through QEMU from Apple Silicon
-- it avoids introducing multiple target concerns too early
-
-### Deferred target support
-
-Support for other targets, including `aarch64`, is intentionally deferred until the current foundation is stable.
-
-The rationale for the current target choice is recorded in:
-
-- `docs/decisions/0001-target-platform.md`
-
-## Architectural Principles
-
-### 1. Minimal first
-
-Start with the smallest useful system.
-
-Add complexity only when it is justified by:
-
-- a clear learning benefit
-- a real implementation need
-- a clearer subsystem boundary
-
-### 2. Explicit boundaries
-
-The project should prefer visible boundaries over hidden behavior.
-
-That applies to:
-
-- crate boundaries
-- module boundaries
-- firmware and architecture boundaries
-- host-testable versus runtime-only logic
-- implemented versus deferred subsystem behavior
-
-### 3. Unsafe is isolated
-
-Unsafe code should stay close to the boundary that requires it.
-
-In practice, that means:
-
-- keep unsafe code near hardware, ABI, or firmware interaction
-- avoid spreading unsafe assumptions through higher-level logic
-- document invariants when unsafe behavior becomes non-trivial
-
-### 4. Host-testable logic first
-
-If logic can be tested on the host, it should prefer living in `nucleus/`.
-
-This keeps:
-
-- unit tests fast
-- logic easier to reason about
-- firmware-facing code smaller
-- emulator-only validation focused on real runtime behavior
-
-### 5. Code-first, docs-supported
-
-Code is the primary source of truth.
-
-Documentation should explain:
-
-- intent
-- constraints
-- boundaries
-- tradeoffs
-
-Documentation should avoid repeating implementation details that are already obvious from the code.
-
-### 6. Reproducible workflows
-
-Common development tasks should be:
-
-- explicit
-- versioned
-- easy to discover
-- aligned between local development and CI
-
-The project should prefer simple workflow entry points over hidden tooling layers.
-
-### 7. Educational clarity over cleverness
-
-The architecture should remain readable.
-
-Prefer:
-
-- straightforward control flow
-- small modules
-- simple names
-- explicit state
-- narrow interfaces
-
-Avoid abstractions that make the system harder to learn from.
-
-## Repository Structure
-
-The repository uses a small Rust workspace.
+## Workspace structure
 
 ### `kernel/`
 
-The `kernel/` crate contains:
+`kernel/` contains runtime-facing code that depends on firmware, architecture, or the boot environment.
 
-- the UEFI entry path
-- boot sequencing
-- architecture-facing runtime code
-- console output
-- interrupt and exception runtime boundaries
-- memory and paging runtime boundaries
-- panic handling
-- syscall-facing kernel boundary code
+Current responsibilities:
 
-This crate should remain small and focused on runtime-facing behavior.
+- UEFI entry and boot-mode selection
+- early console output
+- architecture-facing interrupt and paging hooks
+- runtime initialization sequencing
+- kernel-facing wrappers for memory, paging, syscalls, and VFS
+- panic marker and idle behavior
+
+Rule: if a behavior requires UEFI services, CPU-specific setup, or runtime execution state, it belongs here.
 
 ### `nucleus/`
 
-The `nucleus/` crate contains host-testable pure logic.
+`nucleus/` contains host-testable pure logic.
 
-Examples include:
+It is now intentionally split into one source file per subsystem:
 
-- runtime state summaries
-- interrupt state models
-- memory bookkeeping helpers
-- paging helpers
-- syscall models
-- task models
-- descriptor models
+- `arch.rs`
+- `console.rs`
+- `interrupt.rs`
+- `memory.rs`
+- `paging.rs`
+- `syscall.rs`
+- `task.rs`
+- `descriptor.rs`
+- `vfs.rs`
 
-This crate exists to keep pure logic separate from firmware-facing runtime code.
+This split is a deliberate refactor decision. The previous single oversized `lib.rs` file made the project harder to navigate and more difficult to evolve safely.
+
+Rule: if logic can be validated as a normal Rust unit test on the host, it should prefer living in `nucleus/`.
 
 ### `xtask/`
 
-The `xtask/` crate contains developer workflow commands.
+`xtask/` is the supported workflow boundary.
 
-It is the main entry point for:
+It owns:
 
-- checking
-- formatting
+- formatting checks
 - linting
-- unit tests
-- QEMU smoke tests
-- exception smoke tests
-- local run workflows
+- workspace checks
+- host-side unit tests
+- bounded QEMU smoke tests
+- interactive local runs
 
-This keeps project workflows explicit and Rust-native.
+Rule: repository workflows should stay explicit and Rust-native rather than spreading across ad hoc shell scripts.
 
 ### `docs/`
 
-The `docs/` directory contains concise project documentation.
+`docs/` is intentionally small and centered on a core set of documents:
 
-It should contain a small number of document types:
+- `README.md`
+- `docs/spec.md`
+- `docs/architecture.md`
+- `docs/roadmap.md`
+- `docs/decisions/`
 
-- architecture and roadmap documents
-- testing and workflow guidance
-- subsystem direction notes
-- architecture decision records
+This is also a deliberate refactor decision. The documentation structure now prefers one authoritative document per concern instead of many overlapping direction notes.
 
-### `.github/`
-
-The `.github/` directory contains:
-
-- CI workflows
-- issue templates
-- pull request templates
-
-This supports contributor experience and project hygiene.
-
-## System Boundaries
-
-The architecture is intentionally organized around a few stable boundaries.
+## Boundary model
 
 ### Boot boundary
 
 The boot boundary is responsible for:
 
 - entering through UEFI
-- selecting the current boot mode
-- initializing early runtime subsystems in a visible order
-- keeping boot behavior easy to inspect
+- choosing the current boot mode
+- running a visible initialization sequence
+- keeping the boot path readable and diagnosable
 
-The boot path should remain explicit and small.
+The boot boundary should remain small and explicit.
 
 ### Architecture boundary
 
 The architecture boundary isolates target-specific behavior.
 
-It should contain:
+Current responsibilities include:
 
-- architecture-specific low-level setup
-- exception and interrupt hooks
-- paging-facing architecture hooks
-- CPU-specific runtime helpers
+- loading the x86_64 IDT
+- triggering the real breakpoint path
+- observing the current paging context through `CR3`
+- exposing minimal runtime state to the rest of the kernel
 
-Shared logic should stay outside this boundary whenever possible.
+The architecture boundary should not grow into a general abstraction layer before the project actually needs one.
 
 ### Runtime subsystem boundaries
 
-The kernel is organized into small subsystem boundaries such as:
+The kernel currently exposes small subsystem boundaries for:
 
 - `console`
 - `interrupt`
@@ -278,181 +118,80 @@ The kernel is organized into small subsystem boundaries such as:
 - `paging`
 - `panic`
 - `syscall`
+- `vfs`
 
-These boundaries should remain narrow and easy to understand.
-
-They do not need to be complete subsystems early. They only need to make responsibilities explicit.
+These boundaries are intentionally narrow. They exist to make responsibilities clear, not to imply subsystem completeness.
 
 ### Host-testable logic boundary
 
-The `nucleus` boundary exists so the project can separate:
+The most important structural rule in the project is the split between:
 
-- pure logic
-- state models
-- summary helpers
-- small validation rules
+- host-testable logic in `nucleus/`
+- runtime-facing integration in `kernel/`
 
-from:
+That split keeps:
 
-- firmware interaction
-- architecture-specific runtime behavior
-- emulator-only behavior
+- unit tests fast
+- state modeling simple
+- firmware-facing code smaller
+- QEMU tests focused on real runtime behavior
 
-This is one of the most important architectural choices in the project.
+## Current data and control flow
 
-## Kernel Design Direction
+A normal boot currently follows this shape:
 
-The kernel should remain modular and small.
+1. `main.rs` enters through UEFI and delegates to `kernel::boot`
+2. `boot` initializes the console and selects a boot mode
+3. `boot` runs the runtime sequence in a fixed visible order
+4. runtime-facing modules call into `nucleus` for pure logic and summaries where appropriate
+5. QEMU smoke tests validate the boot path or the controlled breakpoint path through `xtask`
 
-The current architectural direction favors:
+## Placement rules for future code
 
-- explicit initialization order
-- plain-language runtime logs
-- narrow subsystem entry points
-- minimal public surfaces
-- small state types over large frameworks
+When adding new code, prefer these rules:
 
-The kernel should grow by adding small justified boundaries, not by introducing large generic infrastructure.
+1. put pure logic in `nucleus/`
+2. keep runtime wrappers in `kernel/` small
+3. isolate unsafe code near the boundary that requires it
+4. add new modules only when they express a real boundary
+5. do not introduce heap allocation until a concrete subsystem requires it
+6. do not add generic infrastructure earlier than necessary
 
-## Unix-like Direction
+## Unix-like direction at the architectural level
 
-`rustos` aims toward a small Unix-like teaching kernel.
+`rustos` is moving toward a small Unix-like teaching kernel, but only through concrete boundaries.
 
-At the architectural level, that means the project should gradually move toward:
+That direction currently means:
 
-- a clear kernel and user boundary
-- a syscall-oriented service boundary
-- a task-oriented execution model
-- descriptor-like resource references
-- a later VFS boundary
+- a minimal syscall model
+- a minimal task model
+- a minimal descriptor model
+- a new VFS starter boundary
 
-This direction should remain incremental.
+It does **not** currently mean:
 
-The architecture should not assume:
+- user mode
+- a real scheduler
+- a real descriptor table
+- a real VFS implementation
+- broad compatibility promises
 
-- full POSIX compatibility
-- early user-space support
-- a large syscall surface
-- a complete process model
-- a complete VFS
+## Documentation ownership
 
-The umbrella direction is described in:
+The documentation now follows this ownership model:
 
-- `docs/unix-like.md`
+- `README.md` owns project overview and quick start
+- `docs/spec.md` owns the current technical contract
+- `docs/architecture.md` owns stable structure and engineering rules
+- `docs/roadmap.md` owns status and sequencing
+- `docs/decisions/` owns durable rationale
 
-Subsystem-specific direction is described in:
+This keeps the project easier to understand and reduces stale duplication.
 
-- `docs/paging.md`
-- `docs/syscalls.md`
-- `docs/tasks.md`
-- `docs/descriptors.md`
+## Key decisions recorded here
 
-## Boot Strategy
+This refactor makes three structural decisions explicit:
 
-The project uses a UEFI-first boot path for the current stage.
-
-The early system is intentionally simple:
-
-- a small UEFI application entry path
-- direct QEMU execution
-- explicit firmware configuration
-- deterministic boot output
-
-This keeps the boot model understandable and easy to debug.
-
-A more complex loader split can be considered later only if the project clearly needs it.
-
-## Tooling Strategy
-
-The project uses a minimal Rust-native workflow.
-
-Core tooling includes:
-
-- Rust workspace support
-- nightly Rust where required by low-level boundaries
-- `cargo fmt`
-- `cargo clippy`
-- `cargo check`
-- `cargo xtask`
-- GitHub Actions
-- QEMU for runtime validation
-
-Tooling should support the project without becoming a subsystem of its own.
-
-## Documentation Strategy
-
-The documentation set should have clear ownership.
-
-### `README.md`
-Use for:
-
-- project overview
-- quick start
-- current capabilities at a high level
-- links to deeper docs
-
-### `docs/architecture.md`
-Use for:
-
-- stable architectural principles
-- repository structure
-- system boundaries
-- long-lived design direction
-
-### `docs/roadmap.md`
-Use for:
-
-- milestone status
-- implementation sequencing
-- release shape
-- success metrics
-
-### subsystem docs
-Use for:
-
-- subsystem-specific design direction
-- minimal models
-- deferred items
-- relationships to other boundaries
-
-### decision records
-Use for:
-
-- durable architectural decisions
-- rationale that should not be repeated everywhere else
-
-## Contribution and Maintenance Principles
-
-To keep the architecture maintainable:
-
-- prefer small pull requests
-- keep responsibilities narrow
-- avoid speculative abstractions
-- document durable decisions early
-- keep workflows and docs current
-- treat readability as a feature
-
-## Decision Review Policy
-
-Architecture decisions should be revisited when:
-
-- the target platform changes
-- the boot strategy changes
-- the host development assumptions change
-- the MVP scope changes significantly
-- a subsystem clearly outgrows its current boundary
-
-Until then, the project should resist unnecessary expansion.
-
-## Summary
-
-`rustos` is intentionally small in scope and deliberate in structure.
-
-Its architecture is designed to support:
-
-- a clean educational path
-- a minimal bootable kernel
-- a maintainable open-source repository
-- future growth without early over-engineering
-
-The project should remain simple enough to learn from and strong enough to build on.
+1. `nucleus` is a real module boundary, not a dumping ground for everything host-testable.
+2. The first VFS boundary now exists in code as a minimal namespace contract.
+3. The docs are intentionally consolidated around four core documents plus ADRs.

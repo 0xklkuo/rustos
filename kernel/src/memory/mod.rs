@@ -14,9 +14,7 @@ pub use nucleus::memory::{
 #[cfg(target_os = "uefi")]
 use uefi::boot;
 #[cfg(target_os = "uefi")]
-use uefi::mem::memory_map::MemoryMap;
-#[cfg(target_os = "uefi")]
-use uefi::mem::memory_map::MemoryType;
+use uefi::mem::memory_map::{MemoryMap, MemoryType};
 
 #[cfg(target_os = "uefi")]
 const UEFI_PAGE_SIZE: u64 = 4096;
@@ -115,48 +113,10 @@ pub const fn init_summary(result: InitResult) -> &'static str {
     state_summary(result.state())
 }
 
-/// Returns the current discovered-memory summary without creating an
-/// `InitResult`.
-///
-/// Unlike `init`, this function performs discovery only and does not return the
-/// current memory subsystem state or a derived frame-allocator seed.
-#[must_use]
-pub fn discover() -> DiscoveredMemory {
-    discover_memory()
-}
-
-/// Returns a small plain-language summary of discovered memory information.
-#[must_use]
-pub const fn discovered_memory_counts(memory: DiscoveredMemory) -> &'static str {
-    if memory.conventional_regions() > 0 {
-        crate::DISCOVERED_CONVENTIONAL_MEMORY_MESSAGE
-    } else if memory.descriptor_count() > 0 {
-        crate::DISCOVERED_MEMORY_MAP_MESSAGE
-    } else {
-        crate::DISCOVERED_MEMORY_PENDING_MESSAGE
-    }
-}
-
 /// Returns a small plain-language summary of the current frame allocator seed.
 #[must_use]
 pub const fn frame_allocator_seed_status(result: InitResult) -> &'static str {
     if result.frame_allocator_seed().is_empty() {
-        crate::FRAME_ALLOCATOR_SEED_PENDING_MESSAGE
-    } else {
-        crate::FRAME_ALLOCATOR_SEED_READY_MESSAGE
-    }
-}
-
-/// Returns a small plain-language summary of frame-allocator seed readiness.
-///
-/// Despite the name, this function does not describe the first conventional
-/// memory range directly. It reports only whether the derived seed is still
-/// pending or already ready.
-#[must_use]
-pub const fn frame_allocator_seed_range_summary(result: InitResult) -> &'static str {
-    let seed = result.frame_allocator_seed();
-
-    if seed.is_empty() {
         crate::FRAME_ALLOCATOR_SEED_PENDING_MESSAGE
     } else {
         crate::FRAME_ALLOCATOR_SEED_READY_MESSAGE

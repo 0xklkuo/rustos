@@ -1,210 +1,106 @@
 # Contributing to rustos
 
-Thanks for your interest in contributing to `rustos`.
+Thanks for your interest in `rustos`.
 
-`rustos` is a minimal, educational, and maintainable open-source project for learning Rust systems programming and modern operating system fundamentals. The project values clarity over cleverness and small, well-explained steps over large, complex changes.
+`rustos` is a minimal, educational operating system project. Contributions are welcome when they make the codebase clearer, stronger, and easier to evolve without bloating it.
 
-## Project Goals
+## Read this first
 
-- Teach core OS concepts through a small Rust codebase
-- Keep the design minimal and easy to understand
-- Follow modern Rust best practices
-- Make the project approachable for contributors of different experience levels
-- Prefer explicit design decisions over hidden complexity
+Before starting work, read:
 
-## Non-Goals
+1. `README.md`
+2. `docs/spec.md`
+3. `docs/architecture.md`
+4. `docs/roadmap.md`
 
-At least for the MVP, `rustos` does not aim to be:
+Those four docs are the main project contract.
 
-- a production operating system
-- a feature-complete Unix clone
-- a highly optimized kernel at the cost of readability
-- a place for large speculative subsystems without clear teaching value
+## Contribution rules
 
-## Ways to Contribute
+When contributing, prefer the following:
 
-You can help by contributing:
-
-- documentation improvements
-- typo fixes and wording clarifications
-- bug reports
-- small focused code changes
-- tests and validation improvements
-- build and tooling improvements
-- design feedback grounded in the project goals
-
-## Before You Start
-
-Please:
-
-1. Read the `README.md`
-2. Review the docs in `docs/`
-3. Check open issues and existing discussions
-4. Prefer small, focused pull requests
-5. Make sure your change matches the project goals
-
-If your change is large, architectural, or changes project direction, open an issue or discussion first.
-
-## Development Principles
-
-When contributing, follow these principles:
-
-- keep changes minimal and focused
+- keep changes small and focused
 - prefer readability over abstraction
-- avoid over-engineering
-- isolate `unsafe` code and document its invariants
-- use simple names
-- keep modules small and responsibilities clear
-- explain why a design exists when it is not obvious
-- do not introduce dependencies without strong justification
+- fix root causes instead of adding surface patches
+- keep firmware-facing code narrow
+- move host-testable logic into `nucleus/` when practical
+- avoid new dependencies unless they solve a real problem
+- update docs when behavior or project decisions change
 
-## Rust Style
+## What usually makes a good contribution
 
-This project follows the official Rust style guide.
+- documentation clarifications
+- small focused bug fixes
+- better tests or validation
+- workflow improvements
+- small subsystem refinements that reduce complexity
+- code cleanup that strengthens boundaries without rewriting the project
 
-General expectations:
+## What usually does not fit well
 
-- run formatting before submitting changes
-- keep code idiomatic and consistent
-- avoid unnecessary macros
-- avoid unnecessary generics or traits in early-stage code
-- prefer explicit control flow when it improves understanding
+- speculative frameworks
+- large rewrites without a concrete need
+- feature growth that outruns the current milestone
+- production-oriented complexity the project does not claim to support
 
-## Commit Style
+## Validation
 
-Use conventional commits when possible.
+Before submitting a change, run the smallest relevant validation set.
 
-Examples:
-
-- `chore: initialize workspace and project foundation`
-- `docs: clarify roadmap scope`
-- `feat: add minimal kernel entry point`
-- `fix: handle panic output during early boot`
-
-## Pull Request Guidelines
-
-A good pull request should be:
-
-- small enough to review comfortably
-- clearly scoped
-- explained in plain language
-- linked to an issue when relevant
-
-Please include:
-
-- what changed
-- why it changed
-- any tradeoffs or limitations
-- how you validated it
-
-## Code Review Expectations
-
-Reviews will focus on:
-
-- correctness
-- simplicity
-- maintainability
-- educational value
-- consistency with project goals
-
-A change may be rejected if it:
-
-- adds complexity without clear benefit
-- introduces abstractions too early
-- makes the code harder to teach or understand
-- expands scope beyond the current milestone
-
-## Reporting Bugs
-
-When reporting a bug, include:
-
-- what you expected
-- what happened instead
-- steps to reproduce
-- host environment details
-- toolchain details
-- logs or screenshots if useful
-
-If the issue is related to booting or emulation, include as much exact output as possible.
-
-## Suggesting Features
-
-Feature requests are welcome, but they should be grounded in the project goals.
-
-Please explain:
-
-- the problem being solved
-- why it belongs in `rustos`
-- whether it fits the current milestone
-- whether a smaller version of the idea would work
-
-## Documentation Contributions
-
-Documentation is a first-class contribution.
-
-Good documentation changes:
-
-- reduce ambiguity
-- explain intent clearly
-- help new contributors get started faster
-- keep wording concise and direct
-
-## Testing and Validation
-
-Before submitting, validate your change as much as practical.
-
-Use the standard local validation flow:
+Common commands:
 
 - `cargo run -p xtask -- check`
 - `cargo run -p xtask -- fmt`
 - `cargo run -p xtask -- lint`
+- `cargo run -p xtask -- test-unit`
 
-If your change affects the boot path or emulator workflow, also run:
+If your change affects the boot or runtime path, also run:
 
-- `cargo run -p xtask -- test`
+- `cargo run -p xtask -- test-qemu`
 
-At minimum:
+If your change affects the controlled exception path, also run:
 
-- ensure the project still builds
-- ensure formatting is correct
-- ensure lints pass
-- ensure any changed docs are accurate
-- ensure boot-related changes are validated with the bounded run flow when relevant
+- `cargo run -p xtask -- test-exception`
 
-As the project grows, more validation steps may be added.
+## Pull request expectations
 
-## Security and Safety
+A good pull request should explain:
 
-This project includes low-level systems code. Be careful with:
+- what changed
+- why it changed
+- any important tradeoffs
+- how it was validated
 
-- `unsafe` blocks
-- memory assumptions
-- architecture-specific behavior
-- boot and runtime invariants
+Prefer small pull requests over broad mixed changes.
 
-If you add `unsafe` code, document:
+## Safety and `unsafe`
+
+This project contains low-level code and `unsafe` Rust.
+
+If you add or change `unsafe` code, document:
 
 - why it is needed
 - what assumptions it relies on
-- what must remain true for it to be correct
+- what must stay true for it to remain correct
 
-## Communication
+## Commit style
 
-Please keep communication:
+Conventional commits are preferred when practical.
 
-- respectful
-- direct
-- constructive
-- focused on the code and project goals
+Examples:
 
-When in doubt, choose clarity.
+- `docs: simplify project contract`
+- `refactor: split nucleus into subsystem modules`
+- `feat: add minimal vfs starter`
+- `fix: tighten memory boundary wording`
 
-## License
+## If you are unsure where to start
 
-By contributing to `rustos`, you agree that your contributions will be licensed under the MIT License.
+A good first contribution is usually one of:
 
-## Questions
+- a docs cleanup
+- a test improvement
+- a small boundary clarification
+- a focused cleanup in `nucleus/` or `xtask/`
 
-If something is unclear, ask before making a large change.
-
-Clear questions early are better than large rewrites later.
+When in doubt, ask a focused question before starting a large change.

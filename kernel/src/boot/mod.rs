@@ -103,7 +103,6 @@ fn initialize_runtime(console_state: crate::console::State) {
     crate::console::write_line(crate::MEMORY_MAP_INIT_MESSAGE);
     let memory = crate::memory::init();
     crate::console::write_line(crate::memory::discovered_summary(memory));
-    crate::console::write_line(crate::memory::discovered_memory_counts(memory.discovered()));
     crate::console::write_line(crate::memory::first_conventional_range_summary(memory));
     crate::console::write_line(crate::FRAME_ALLOCATOR_INIT_MESSAGE);
     crate::console::write_line(crate::memory::frame_allocator_seed_status(memory));
@@ -122,6 +121,11 @@ fn initialize_runtime(console_state: crate::console::State) {
     let syscall = crate::syscall::init();
     crate::console::write_line(crate::syscall::init_summary(syscall));
     crate::console::write_line(crate::syscall::boundary_summary(syscall));
+
+    crate::console::write_line(crate::vfs::INIT_MESSAGE);
+    let vfs = crate::vfs::init();
+    crate::console::write_line(crate::vfs::init_summary(vfs));
+    crate::console::write_line(crate::vfs::console_path_summary(vfs));
 
     crate::console::write_line(crate::panic::init());
     crate::console::write_line(crate::IDLE_READY_MESSAGE);

@@ -83,6 +83,7 @@ This decision should be revisited when one or more of the following become true:
 
 ## Related Documents
 
-- `docs/roadmap.md`
-- `docs/architecture.md`
 - `README.md`
+- `docs/spec.md`
+- `docs/architecture.md`
+- `docs/roadmap.md`

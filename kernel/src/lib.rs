@@ -15,6 +15,7 @@ pub mod memory;
 pub mod paging;
 pub mod panic;
 pub mod syscall;
+pub mod vfs;
 
 /// Boot and runtime log markers used across the early kernel path.
 pub const BOOT_MESSAGE: &str = "rustos: boot start";
