@@ -15,6 +15,7 @@ All notable changes to `rustos` will be documented in this file.
 - trimmed duplicated kernel-side tests that were repeating `nucleus` coverage
 - simplified contributor-facing docs so the main project contract is easier to find and maintain
 - made `xtask check` validate the UEFI kernel target directly so target-specific regressions surface earlier
+- disabled the x86_64 UEFI red zone so the breakpoint exception path is more stable under QEMU and CI
 
 ### Removed
 - redundant direction documents that duplicated the new core docs
